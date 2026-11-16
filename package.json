@@ -1,0 +1,12 @@
+{
+  "name": "low-water",
+  "private": true,
+  "type": "module",
+  "description": "Low Water: a very slow tide pool you can't control. An idle game on the real clock.",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test",
+    "stamp": "node tools/stamp.js",
+    "serve": "node tools/serve.js"
+  }
+}

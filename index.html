@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Low Water</title>
+<meta name="description" content="A very slow tide pool you can't control. An idle game on the real clock.">
+<meta name="theme-color" content="#0b1e36">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="stylesheet" href="css/low-water.css">
+</head>
+<body>
+<canvas id="scene" tabindex="0" aria-label="The tide pool"></canvas>
+<div id="hud">
+    <div id="tidechip" class="chip" role="status"></div>
+    <nav id="tools"></nav>
+    <div id="latest" aria-live="polite"></div>
+    <div id="stones" class="chip"></div>
+    <section id="card" hidden></section>
+</div>
+<div id="panel" hidden><div class="sheet" role="dialog" aria-modal="true"></div></div>
+<div id="banners" aria-live="polite"></div>
+<noscript>Low Water needs JavaScript.</noscript>
+<script src="js/version.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
