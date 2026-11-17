@@ -6,7 +6,7 @@ const n = (k, one, many) => (k === 1 ? one : `${k}${de(k)} ${many}`);
 
 export default {
     name: 'Română',
-    title: 'Low Water',
+    title: 'Cairn',
     tagline: 'o baltă lăsată de maree, foarte înceată, pe care n-o poți controla',
     intro: [
         'Zece stânci și o maree. Viața crește când apa e sus. Tu hotărăști doar ce să nu tulburi.',
@@ -157,15 +157,15 @@ export default {
     on: 'pornit', off: 'oprit',
     newPool: 'Începe o baltă nouă', newPoolAsk: 'Părăsești balta aceasta pentru totdeauna și începi una nouă?', yes: 'Da, o baltă nouă', no: 'Nu',
     version: 'Versiune', checkUpdate: 'Caută o versiune nouă', install: 'Instalează',
-    about: 'Low Water este sora de pe web a jocului TIDEPOOL, scris în limbaj de asamblare Z80 pentru calculatoare CP/M. Amândouă țin aceeași maree.',
+    about: 'Cairn este sora de pe web a jocului TIDEPOOL, scris în limbaj de asamblare Z80 pentru calculatoare CP/M. Amândouă țin aceeași maree.',
     welcome: 'Bine ai revenit',
     away: 'Ai lipsit {d}: între timp, {t} au venit și au plecat.',
     walked: 'Când ai plecat, ai trecut prin apă peste stâncile nepăzite.',
     walkedNone: 'Fiecare stâncă cu viață avea un turnuleț. N-ai lăsat nicio urmă.',
     whileGone: 'Cât ai lipsit:',
     keptToItself: 'Balta și-a văzut de treabă.',
-    updateReady: 'O versiune nouă de Low Water este gata.', updateNow: 'Actualizează', later: 'Mai târziu',
-    upToDate: 'Aceasta este cea mai nouă versiune.', offlineReady: 'Low Water poate merge acum și fără internet.',
+    updateReady: 'O versiune nouă de Cairn este gata.', updateNow: 'Actualizează', later: 'Mai târziu',
+    upToDate: 'Aceasta este cea mai nouă versiune.', offlineReady: 'Cairn poate merge acum și fără internet.',
     updateFail: 'Nu am putut căuta: fără internet?', installHint: 'Atinge Partajare, apoi Adaugă pe ecranul principal.',
     installMenu: 'Folosește meniul browserului, Instalare.',
     minutes: k => `${k} min`,

@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "Low Water: a very slow tide pool",
-  "short_name": "Low Water",
+  "name": "Cairn: a very slow tide pool",
+  "short_name": "Cairn",
   "description": "A tide pool on the real clock: ten rocks, a tide every 12 hours 25 minutes, and one decision, what not to disturb.",
   "start_url": "./",
   "scope": "./",

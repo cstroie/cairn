@@ -1,4 +1,4 @@
-# Low Water: design notes
+# Cairn: design notes
 
 An idle game on the clock. Vanilla ES modules, Canvas 2D, WebAudio; no framework, no build, no
 dependencies, no image or sound files.

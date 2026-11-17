@@ -26,5 +26,5 @@ export function serve(port = 8125) {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
     const port = Number(process.env.PORT) || 8125;
-    serve(port).then(() => console.log(`Low Water on http://localhost:${port}`));
+    serve(port).then(() => console.log(`Cairn on http://localhost:${port}`));
 }

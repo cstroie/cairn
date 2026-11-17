@@ -5,7 +5,7 @@ const n = (k, one, many) => `${k} ${k === 1 ? one : many}`;
 
 export default {
     name: 'English',
-    title: 'Low Water',
+    title: 'Cairn',
     tagline: 'a very slow tide pool you can’t control',
     intro: [
         'Ten rocks and a tide. Things grow when the water is in. You decide only what not to disturb.',
@@ -156,15 +156,15 @@ export default {
     on: 'on', off: 'off',
     newPool: 'Start a new pool', newPoolAsk: 'Leave this pool for ever and start a new one?', yes: 'Yes, a new pool', no: 'No',
     version: 'Version', checkUpdate: 'Look for a new version', install: 'Install',
-    about: 'Low Water is the web sister of TIDEPOOL, a game for CP/M computers written in Z80 assembly. Both keep the same tide.',
+    about: 'Cairn is the web sister of TIDEPOOL, a game for CP/M computers written in Z80 assembly. Both keep the same tide.',
     welcome: 'Welcome back',
     away: 'You were away for {d}: {t} came and went.',
     walked: 'When you left, you waded out across the rocks nobody fenced.',
     walkedNone: 'Every rock with life on it had a cairn. You left no mark.',
     whileGone: 'While you were gone:',
     keptToItself: 'The pool kept to itself.',
-    updateReady: 'A new version of Low Water is ready.', updateNow: 'Load it', later: 'Later',
-    upToDate: 'This is the latest version.', offlineReady: 'Low Water is ready to work offline.',
+    updateReady: 'A new version of Cairn is ready.', updateNow: 'Load it', later: 'Later',
+    upToDate: 'This is the latest version.', offlineReady: 'Cairn is ready to work offline.',
     updateFail: 'Could not look: offline?', installHint: 'Tap Share, then Add to Home Screen.',
     installMenu: 'Use the browser menu, Install.',
     minutes: k => `${k} min`,

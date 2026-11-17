@@ -53,5 +53,5 @@ test('durations and plurals', () => {
     assert.equal(duration(21 * 1440), '21 de zile');
     assert.equal(LANGS.ro.tideCount(14), '14 maree');
     setLang('xx');
-    assert.equal(t('title'), 'Low Water');
+    assert.equal(t('title'), 'Cairn');
 });

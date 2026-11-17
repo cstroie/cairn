@@ -1,4 +1,4 @@
-# Low Water
+# Cairn
 
 **Play: https://cstroie.github.io/low-water/**
 

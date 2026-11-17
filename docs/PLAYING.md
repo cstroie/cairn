@@ -1,4 +1,4 @@
-# Low Water: how to play
+# Cairn: how to play
 
 A very slow tide pool you can't control.
 
