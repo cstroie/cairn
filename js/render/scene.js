@@ -11,6 +11,7 @@ import { skyColours, drawSky, drawWeather } from './sky.js';
 import { drawSea, drawWater } from './water.js';
 import { makeRock, buildStatic, drawCairn } from './rocks.js';
 import { drawCreature } from './creatures.js';
+import { drawFar, drawPool, drawOver, drawBeach } from './ambient.js';
 import { seeded } from '../core/rng.js';
 
 export class Scene {
@@ -19,15 +20,39 @@ export class Scene {
         this.ctx = canvas.getContext('2d');
         this.pan = 0;
         this.seed = 1;
-        this.count = 10;
+        this.on = [];
+        this.hits = [];
+        this.poke = { i: -1, at: -9 };
+        this.prints = { rocks: [], at: -99 };
         this.L = null;
         this.rocks = [];
         this.grain = null;
     }
 
-    setPool(seed, count) {
-        this.seed = seed; this.count = count;
-        if (this.L) this.resize();
+    /** The pool to draw: its seed, and which rocks lie bare. Rebuilds the still layer when either changes. */
+    setPool(seed, on) {
+        const same = seed === this.seed && on.length === this.on.length && on.every((v, i) => v === this.on[i]);
+        this.seed = seed; this.on = on.slice();
+        if (this.L && !same) this.resize();
+    }
+
+    /** Touch rock i: what lives on it reacts for a moment. */
+    touch(i, t) { this.poke = { i, at: t }; }
+
+    /** Footprints in front of these rocks, fading over a minute. */
+    walk(rocks, t) { this.prints = { rocks, at: t }; }
+
+    /** Is the top of rock i out of the water? */
+    exposed(i) { return this.rocks[i] && this.rocks[i].top < this.L.yWater; }
+
+    /** The thing under a point of the view that can be picked up or spotted, or null. */
+    thingAt(x, y) {
+        let best = null, dist = Infinity;
+        for (const h of this.hits) {
+            const d = Math.hypot(x - h.x, y - h.y);
+            if (d < Math.max(h.r, 22) && d < dist) { best = h; dist = d; }
+        }
+        return best;
     }
 
     resize() {
@@ -37,14 +62,17 @@ export class Scene {
         this.dpr = dpr;
         this.canvas.width = Math.round(W * dpr);
         this.canvas.height = Math.round(H * dpr);
-        const SW = Math.max(W, H * 1.6);
-        const centre = this.L ? (this.pan + this.L.W / 2) / this.L.SW : 0.5;
-        this.L = { W, H, SW, pan: 0, horizon: H * 0.4, ridge: H * 0.5, floor: H * 0.84,
-            yHigh: H * 0.452, yLow: H * 0.802, yWater: H * 0.6 };
-        this.rocks = Array.from({ length: this.count }, (_, i) => makeRock(i, this.count, this.L, this.seed));
+        const MW = Math.max(W, H * 1.6);                           // the ten rocks; the ledge lies beyond
+        const ledge = this.on.slice(10).some(Boolean);
+        const SW = ledge ? MW * 1.3 : MW;
+        const centre = this.L ? (this.pan + this.L.W / 2) / this.L.MW : 0.5;
+        this.L = { W, H, SW, MW, pan: 0, horizon: H * 0.4, ridge: H * 0.5, floor: H * 0.84,
+            yHigh: H * 0.452, yLow: H * 0.802, yWater: H * 0.6, spots: [] };
+        this.rocks = Array.from({ length: ledge ? 13 : 10 }, (_, i) => makeRock(i, this.L, this.seed));
+        this.L.spots = this.rocks.filter(R => this.on[R.i] && !R.ledge);
         this.scale = Math.min(dpr, 4096 / SW);
-        this.still = buildStatic(this.L, this.rocks, this.seed, this.scale);
-        this.pan = clamp(centre * SW - W / 2, 0, SW - W);
+        this.still = buildStatic(this.L, this.rocks, this.on, this.seed, this.scale);
+        this.pan = clamp(centre * MW - W / 2, 0, SW - W);
         if (!this.grain) {
             const g = layer(160, 160), r = seeded(4);
             for (let i = 0; i < 2600; i++) {
@@ -76,10 +104,11 @@ export class Scene {
     }
 
     /**
-     * Draw a frame. env: the moment (tide.env); st: the pool; t: seconds;
-     * ui: { sel, names: [text of each rock] }.
+     * Draw a frame. env: the moment (tide.env); rocks: the pool's rocks;
+     * t: seconds; ui: { sel, names: [text of each rock], about: the
+     * surprises of the moment, beach: what lies on the sand }.
      */
-    draw(env, st, t, ui) {
+    draw(env, rocks, t, ui) {
         const { ctx, L } = this;
         if (!L) return;
         if (this.target != null) {
@@ -94,21 +123,42 @@ export class Scene {
 
         drawSky(ctx, L, env, t, col);
         drawSea(ctx, L, env, t, col);
+        const hits = this.hits = [];
+        drawFar(ctx, L, env, t, col, ui.about, hits);
         ctx.drawImage(this.still, this.pan * this.scale, 0, L.W * this.scale, L.H * this.scale, 0, 0, L.W, L.H);
 
         ctx.save();
         ctx.translate(-this.pan, 0);
-        const S = { yWater: L.yWater, H: L.H, wind: L.wind };
+        const S = { yWater: L.yWater, H: L.H, wind: L.wind, poke: 0 };
         for (const R of this.rocks) {
-            if (R.cx + R.slot < this.pan || R.cx - R.slot > this.pan + L.W) continue;
-            drawCreature(ctx, R, st.rocks[R.i], t, S);
+            if (!this.on[R.i] || R.cx + R.slot < this.pan || R.cx - R.slot > this.pan + L.W) continue;
+            S.poke = this.poke.i === R.i ? clamp(1 - (t - this.poke.at) / 2.5) : 0;
+            drawCreature(ctx, R, rocks[R.i], t, S);
         }
+        drawPool(ctx, L, env, t, col, ui.about, hits);
         drawWater(ctx, L, env, t, col);
+        drawOver(ctx, L, env, t, col, ui.about, hits);
+
+        const fade = clamp(1 - (t - this.prints.at) / 60);            // where you waded out
+        if (fade > 0) {
+            ctx.fillStyle = `rgba(110,82,50,${0.34 * fade})`;
+            for (const i of this.prints.rocks) {
+                const R = this.rocks[i];
+                if (!R) continue;
+                for (let k = 0; k < 4; k++) {
+                    const x = R.cx - R.slot * 0.36 + k * R.slot * 0.24, y = L.floor + L.H * (0.03 + (k % 2) * 0.014);
+                    ctx.beginPath(); ctx.ellipse(x, y, L.H * 0.011, L.H * 0.0055, -0.2, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(x + L.H * 0.012, y - L.H * 0.003, L.H * 0.0032, 0, Math.PI * 2); ctx.fill();
+                }
+            }
+        }
+        drawBeach(ctx, L, t, ui.beach, hits);
 
         const fs = Math.max(11, L.H * 0.021);
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.font = `600 ${fs}px ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif`;
         for (const R of this.rocks) {
+            if (R.ledge && !this.on[R.i]) continue;
             const y = L.floor + L.H * 0.075, sel = ui.sel === R.i;
             if (sel) {                                              // the rock you are looking at
                 ctx.strokeStyle = `rgba(255,255,255,${0.55 + 0.25 * Math.sin(t * 3)})`;
@@ -117,8 +167,8 @@ export class Scene {
                 ctx.beginPath(); ctx.ellipse(R.cx, y - L.H * 0.012, R.slot * 0.44, L.H * 0.045, 0, 0, Math.PI * 2); ctx.stroke();
                 ctx.setLineDash([]);
             }
-            if (st.rocks[R.i].cairn) drawCairn(ctx, R.cx, y, L.H * 0.021, R.seed);
-            ctx.fillStyle = sel ? 'rgba(60,40,20,0.95)' : 'rgba(96,72,44,0.7)';
+            if (rocks[R.i].cairn) drawCairn(ctx, R.cx, y, L.H * 0.021, R.seed);
+            ctx.fillStyle = sel ? 'rgba(60,40,20,0.95)' : this.on[R.i] ? 'rgba(96,72,44,0.7)' : 'rgba(96,72,44,0.35)';
             ctx.fillText(ui.names[R.i], R.cx, L.floor + L.H * 0.118, R.slot * 0.96);
         }
         ctx.restore();

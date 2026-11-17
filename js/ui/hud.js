@@ -6,7 +6,8 @@
 import { t, L, duration } from '../i18n.js';
 import { ICON } from './icons.js';
 import { LOW, TIDE, nextWaters } from '../core/tide.js';
-import { stage, stonesLeft } from '../core/sim.js';
+import { stage, stonesLeft, grows, LEDGE } from '../core/sim.js';
+import { nextUnlock } from '../core/world.js';
 
 const $ = id => document.getElementById(id);
 const el = (tag, attrs = {}, html = '') => {
@@ -16,7 +17,8 @@ const el = (tag, attrs = {}, html = '') => {
     return e;
 };
 export const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-export const rockName = (st, i) => st.rocks[i].name || t('rockN', { n: i + 1 });
+export const rockName = (st, i) => st.rocks[i].name || (i >= LEDGE ? t('ledgeN', { n: i - LEDGE + 1 }) : t('rockN', { n: i + 1 }));
+export const fmtClock = f => `${String(f.hour).padStart(2, '0')}:${String(f.minute).padStart(2, '0')}`;
 
 /** What the tide is doing, in words. */
 export function tideWords(env) {
@@ -36,7 +38,7 @@ export class Hud {
     build() {
         const tools = $('tools');
         tools.innerHTML = '';
-        for (const name of ['diary', 'tides', 'settings']) {
+        for (const name of ['guide', 'diary', 'peek', 'settings']) {
             const b = el('button', { 'aria-label': t(name), title: t(name) }, ICON[name]);
             b.addEventListener('click', () => this.hooks.tool(name));
             tools.appendChild(b);
@@ -45,7 +47,23 @@ export class Hud {
         chip.innerHTML = '<div class="gauge"><i></i></div><div class="txt"><b></b><span></span></div>';
         chip.onclick = () => this.hooks.tool('tides');
         $('stones').title = t('stones');
+        const peek = $('peek');
+        peek.innerHTML = `<button class="play" aria-label="${esc(t('play'))}">▶</button><input type="range" min="0" max="1490" step="5" value="0" aria-label="${esc(t('peek'))}"><b></b><button class="x" aria-label="${esc(t('close'))}">${ICON.close}</button>`;
+        peek.querySelector('input').oninput = e => this.hooks.peek({ off: Number(e.target.value), play: false });
+        peek.querySelector('.play').onclick = () => this.hooks.peek({ toggle: true });
+        peek.querySelector('.x').onclick = () => this.hooks.peek(null);
         this.sig = '';
+    }
+
+    /** The time-lapse bar: p is null (closed) or { off, play, label }. */
+    peek(p) {
+        const bar = $('peek');
+        bar.hidden = !p;
+        document.body.classList.toggle('peeking', !!p);
+        if (!p) return;
+        bar.querySelector('input').value = p.off;
+        bar.querySelector('b').textContent = p.label;
+        bar.querySelector('.play').textContent = p.play ? '❚❚' : '▶';
     }
 
     /** Once a second or so. */
@@ -65,21 +83,39 @@ export class Hud {
         box.setAttribute('aria-label', `${t('stones')}: ${left}`);
     }
 
-    showCard(i, st) {
+    /** The card of rock i. exposed: its top is out of the water. */
+    showCard(i, st, exposed) {
         this.card = i;
-        const r = st.rocks[i], c = $('card');
+        const r = st.rocks[i], c = $('card'), ledge = i >= LEDGE;
+        const x = `<button class="x" aria-label="${esc(t('close'))}">${ICON.close}</button>`;
+        if (!r.on) {                                            // still under the sand
+            const nx = nextUnlock(st);
+            c.innerHTML = `<header><h3>${esc(t('buried'))}</h3>${x}</header>
+                <p class="what">${esc(t('buriedSub'))}</p>${nx ? `<p class="fate">${esc(L().unlock[nx.kind].replace('{n}', nx.left))}</p>` : ''}`;
+            c.hidden = false;
+            c.querySelector('.x').onclick = () => this.hooks.select(-1);
+            return;
+        }
         const quiet = r.calm > 0 ? t('quiet', { d: duration(r.calm * TIDE) }) : t('quietNone');
-        const life = r.sp ? `<b>${esc(cap(L().sp[r.sp]))}.</b> ${r.sp < 6 ? L().grown[stage(r.g)] + ' ' : ''}` : '';
+        const life = r.sp ? `<b>${esc(cap(L().sp[r.sp]))}.</b> ${grows(r.sp) ? L().grown[stage(r.g)] + ' ' : ''}` : '';
+        const deep = ledge && !exposed;
         c.innerHTML = `
             <header><h3><span>${esc(rockName(st, i))}</span><button class="ren" aria-label="${esc(t('rename'))}" title="${esc(t('rename'))}">✎</button></h3>
-            <small>${esc(t('rockOf', { n: i + 1, m: st.open }))}</small><button class="x" aria-label="${esc(t('close'))}">${ICON.close}</button></header>
+            <small>${esc(ledge ? t('ledgeRock') : t('rockOf', { n: i + 1, m: 10 }))}</small>${x}</header>
             <p class="what">${life}${esc(L().desc[r.sp])}</p>
-            <p class="fate">${esc(quiet)} ${esc(r.cairn ? t('guarded') : t('crossed'))}</p>
-            <button class="btn ${r.cairn ? 'plain' : ''}">${esc(r.cairn ? t('liftCairn') : t('placeCairn'))}</button>`;
+            <p class="fate">${esc(quiet)} ${esc(deep ? t('ledgeDeep') : r.cairn ? t('guarded') : t('crossed'))}</p>
+            <div class="two"><button class="btn cairn ${r.cairn ? 'plain' : ''}">${esc(r.cairn ? t('liftCairn') : t('placeCairn'))}</button>
+            <button class="btn plain look" title="${esc(t('lookCost'))}">${esc(t('lookUnder'))}</button></div>
+            <p class="note"></p>`;
         c.hidden = false;
-        const btn = c.querySelector('.btn');
-        if (!r.cairn && stonesLeft(st) <= 0) { btn.disabled = true; btn.textContent = t('noStones'); }
+        const btn = c.querySelector('.cairn'), look = c.querySelector('.look'), note = c.querySelector('.note');
+        if (deep) btn.disabled = true;
+        else if (!r.cairn && stonesLeft(st) <= 0) { btn.disabled = true; note.textContent = t('noStones'); }
+        if (r.cairn) look.disabled = true;
+        else if (!exposed) { look.disabled = true; if (!deep && !note.textContent) note.textContent = t('tooDeep'); }
+        else if (!note.textContent) note.textContent = t('lookCost');
         btn.onclick = () => this.hooks.cairn(i);
+        look.onclick = () => this.hooks.look(i);
         c.querySelector('.x').onclick = () => this.hooks.select(-1);
         c.querySelector('.ren').onclick = () => this.rename(i, st);
     }
@@ -108,9 +144,11 @@ export class Hud {
     }
 
     toast(text) {
-        const e = el('div', { class: 'banner' });
+        const e = el('div', { class: 'banner toast' }), box = $('banners');
         e.textContent = text;
-        $('banners').appendChild(e);
+        box.appendChild(e);
+        const toasts = box.querySelectorAll('.toast');
+        if (toasts.length > 3) toasts[0].remove();
         setTimeout(() => e.remove(), 4500);
     }
 

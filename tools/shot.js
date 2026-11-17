@@ -17,7 +17,9 @@ const SHOTS = {
     dusk: { q: 'at=2026-09-10T19:40&demo=1&seed=7', w: 1280, h: 720 },
     night: { q: 'at=2026-11-05T23:30&demo=1&seed=7', w: 1280, h: 720 },
     phone: { q: 'at=2026-06-21T10:00&demo=1&seed=7&lang=ro', w: 390, h: 844, low: true, tap: true },
-    wide: { q: 'at=2026-03-12T08:20&seed=11', w: 844, h: 390 }
+    wide: { q: 'at=2026-03-12T08:20&seed=11', w: 844, h: 390 },
+    ledge: { q: 'at=2026-06-15T13:00&demo=1&seed=7', w: 1280, h: 720, low: true, pan: 400 },
+    guide: { q: 'at=2026-06-21T13:00&demo=1&seed=7', w: 520, h: 800, key: 'g' }
 };
 
 const out = process.argv[2] || '.';
@@ -44,6 +46,8 @@ for (const [name, s] of Object.entries(SHOTS)) {
     const btn = page.locator('#panel .btn').first();
     if (await btn.isVisible()) await btn.click();
     if (s.tap) await page.mouse.click(s.w * 0.5, s.h * 0.74);
+    if (s.pan) await page.mouse.wheel(s.pan, 0);
+    if (s.key) { await page.waitForTimeout(1500); await page.keyboard.press(s.key); }
     await page.waitForTimeout(900);
     await page.screenshot({ path: path.join(out, `${name}.png`) });
     console.log(name, errors.length ? `ERRORS: ${errors.join(' | ')}` : 'ok');

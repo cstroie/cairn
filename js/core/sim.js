@@ -5,15 +5,21 @@
  * byte is compared with a threshold.
  *
  * A rock: sp (species), g (growth 0-255, a size every 64), calm (tides
- * since it was last stepped on), cairn (a cairn guards it), name.
+ * since it was last stepped on), cairn (a cairn guards it), name, on (it
+ * lies bare: rocks still under the sand are not simulated).
+ *
+ * Beyond the CP/M game: the rocks from LEDGE on are the Deep Ledge, with
+ * their own settlers (sponge) and visitors (sea slug, brittle star), and
+ * the journal also keeps what the player does (uncover, rescue, clean, look).
  */
 import { rnd } from './rng.js';
 import { seasonOfTide } from './tide.js';
 
-export const SP = { BARE: 0, FILM: 1, BARN: 2, KELP: 3, MUSS: 4, ANEM: 5, STAR: 6, CRAB: 7, URCH: 8 };
-export const SPECIES = ['bare', 'film', 'barn', 'kelp', 'muss', 'anem', 'star', 'crab', 'urch'];
-export const EV = { STORM: 0, TORN: 1, SETTLE: 2, BLOOM: 3, GRAZE: 4, ATE: 5, DIED: 6, LEFT: 7, VISIT: 8, STEP: 9 };
-export const EVENTS = ['storm', 'torn', 'settle', 'bloom', 'graze', 'ate', 'died', 'left', 'visit', 'step'];
+export const SP = { BARE: 0, FILM: 1, BARN: 2, KELP: 3, MUSS: 4, ANEM: 5, STAR: 6, CRAB: 7, URCH: 8, SPONGE: 9, NUDI: 10, BRIT: 11 };
+export const SPECIES = ['bare', 'film', 'barn', 'kelp', 'muss', 'anem', 'star', 'crab', 'urch', 'sponge', 'nudi', 'brit'];
+export const EV = { STORM: 0, TORN: 1, SETTLE: 2, BLOOM: 3, GRAZE: 4, ATE: 5, DIED: 6, LEFT: 7, VISIT: 8, STEP: 9, UNCOVER: 10, RESCUE: 11, CLEAN: 12, LOOK: 13 };
+export const EVENTS = ['storm', 'torn', 'settle', 'bloom', 'graze', 'ate', 'died', 'left', 'visit', 'step', 'uncover', 'rescue', 'clean', 'look'];
+export const LEDGE = 10;            // the first rock of the Deep Ledge
 
 export const CAP = 2000;            // tides caught up at most (nearly three years)
 export const JOURNAL = 200;
@@ -25,7 +31,8 @@ const TB_SETTLE = [30, 80, 56, 56];
 const TB_CRAB = [4, 6, 10, 6];
 
 export const stage = g => g >> 6;   // 0 tiny, 1 young, 2 grown, 3 full grown
-export const isVisitor = sp => sp >= SP.STAR;
+export const isVisitor = sp => (sp >= SP.STAR && sp <= SP.URCH) || sp >= SP.NUDI;
+export const grows = sp => sp >= SP.FILM && !isVisitor(sp);
 
 /** Write a happening in the journal. rock -1 is the whole pool. */
 export function log(st, tide, ev, rock, sp) {
@@ -48,7 +55,7 @@ export function simTide(st, n) {
     const season = seasonOfTide(n);
     const storm = rnd(st) < TB_STORM[season];
     if (storm) { st.lastStorm = n; log(st, n, EV.STORM, -1, 0); }
-    for (let i = 0; i < st.open; i++) rock(st, n, i, season, storm);
+    for (let i = 0; i < st.rocks.length; i++) if (st.rocks[i].on) rock(st, n, i, season, storm);
     st.last = n;
 }
 
@@ -83,6 +90,29 @@ function rock(st, n, i, season, storm) {
         becomes(r, SP.BARE, 0);
         log(st, n, EV.LEFT, i, was);
     };
+
+    if (i >= LEDGE) {                                      // the Deep Ledge has its own ways
+        switch (r.sp) {
+        case SP.BARE:
+            if (rnd(st) < 44) becomes(r, SP.FILM, 8);
+            else if (r.calm >= 30 && rnd(st) < 6) { becomes(r, SP.BRIT, 100); log(st, n, EV.VISIT, i, SP.BRIT); }
+            return;
+        case SP.FILM:
+            if (grow(r, (rnd(st) & 15) + 18, season) >= 96 && rnd(st) < TB_SETTLE[season]) {
+                becomes(r, rnd(st) < 170 ? SP.SPONGE : SP.KELP, 20);
+                log(st, n, EV.SETTLE, i, r.sp);
+            }
+            return;
+        case SP.SPONGE:
+            if (grow(r, 4, season) >= 128 && r.calm >= 20 && rnd(st) < 8) {
+                becomes(r, SP.NUDI, 120);
+                log(st, n, EV.ATE, i, SP.NUDI);
+            } else senesce();
+            return;
+        case SP.NUDI: return leave(16);
+        case SP.BRIT: return leave(12);
+        }
+    }
 
     switch (r.sp) {
     case SP.BARE:
@@ -144,9 +174,9 @@ export function catchUp(st, now) {
  */
 export function trample(st) {
     const stepped = [];
-    for (let i = 0; i < st.open; i++) {
+    for (let i = 0; i < st.rocks.length; i++) {
         const r = st.rocks[i];
-        if (r.cairn) continue;
+        if (!r.on || r.cairn) continue;
         r.calm = 0;
         if (r.sp === SP.BARE) continue;
         stepped.push(i);
@@ -171,3 +201,4 @@ export function toggleCairn(st, i) {
 }
 
 export const stonesLeft = st => st.stones - st.rocks.filter(r => r.cairn).length;
+export const openRocks = st => st.rocks.filter(r => r.on).length;

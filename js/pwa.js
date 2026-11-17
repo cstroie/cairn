@@ -58,6 +58,8 @@ function watch(reg) {
     setInterval(check, HOUR);
 }
 
+export const registration_ = () => registration;
+
 export async function checkNow() {
     if (!registration) return hooks.toast(t('updateFail'));
     try {

@@ -6,6 +6,7 @@
  *   bell()              the tide bell
  *   chime(n)            a small rising figure: something happened
  *   plop(), click()     small sounds for the hand
+ *   gull()              a gull calls
  */
 export class Audio {
     constructor() {
@@ -93,7 +94,8 @@ export class Audio {
 
     chime(n = 3) {
         if (!this.ctx || !this.enabled) return;
-        const scale = [523.25, 587.33, 659.25, 783.99, 880, 1046.5];
+        const scale = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.5];
+        n = Math.min(n, 6);
         const at = this.ctx.currentTime + 0.02, start = Math.floor(Math.random() * 3);
         for (let i = 0; i < n; i++) this.tone(scale[start + i], at + i * 0.13, 1.4, 0.07, 'triangle');
     }
@@ -108,6 +110,29 @@ export class Audio {
         g.gain.exponentialRampToValueAtTime(0.0001, at + 0.16);
         o.connect(g).connect(this.master);
         o.start(at); o.stop(at + 0.2);
+    }
+
+    gull() {
+        if (!this.ctx || !this.enabled) return;
+        let at = this.ctx.currentTime + 0.05;
+        const n = 2 + Math.floor(Math.random() * 4), base = 900 + Math.random() * 300;
+        const f = this.ctx.createBiquadFilter();
+        f.type = 'bandpass'; f.frequency.value = 2200; f.Q.value = 2;
+        const pan = this.ctx.createStereoPanner ? this.ctx.createStereoPanner() : null;
+        if (pan) { pan.pan.value = Math.random() * 1.6 - 0.8; f.connect(pan).connect(this.master); } else f.connect(this.master);
+        for (let i = 0; i < n; i++) {
+            const o = this.ctx.createOscillator(), g = this.ctx.createGain(), d = 0.16 + Math.random() * 0.1;
+            o.type = 'sawtooth';
+            o.frequency.setValueAtTime(base * 0.8, at);
+            o.frequency.linearRampToValueAtTime(base * 1.25, at + d * 0.3);
+            o.frequency.linearRampToValueAtTime(base * 0.9, at + d);
+            g.gain.setValueAtTime(0, at);
+            g.gain.linearRampToValueAtTime(0.05, at + 0.03);
+            g.gain.linearRampToValueAtTime(0, at + d);
+            o.connect(g).connect(f);
+            o.start(at); o.stop(at + d + 0.02);
+            at += d + 0.07;
+        }
     }
 
     click() {

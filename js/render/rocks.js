@@ -8,13 +8,17 @@ import { seeded } from '../core/rng.js';
 
 const SAND = [226, 204, 160], SAND_DEEP = [196, 170, 122];
 
-/** The shape of rock i: outline points and a function along its top. */
-export function makeRock(i, n, L, seed) {
+/**
+ * The shape of rock i: outline points and a function along its top. The
+ * ten rocks stand along the main scene (L.MW wide); the rocks of the Deep
+ * Ledge lie low beyond it and only show at the lowest water.
+ */
+export function makeRock(i, L, seed) {
     const r = seeded(seed * 7919 + i * 104729 + 13);
-    const slot = L.SW * 0.9 / n;
-    const cx = L.SW * 0.05 + slot * (i + 0.5) + (r() - 0.5) * slot * 0.1;
+    const slot = L.MW * 0.9 / 10, ledge = i >= 10;
+    const cx = L.MW * 0.05 + slot * (i + 0.5) + (r() - 0.5) * slot * 0.1 + (ledge ? L.MW * 0.035 : 0);
     const w = slot * (0.8 + r() * 0.26);
-    const h = L.H * (0.1 + r() * 0.1);
+    const h = ledge ? L.H * (0.058 + r() * 0.012) : L.H * (0.1 + r() * 0.1);
     const base = L.floor + L.H * 0.014;
     const skew = (r() - 0.5) * 0.9, round = 0.72 + r() * 0.5;
     const ctl = Array.from({ length: 7 }, () => 0.8 + r() * 0.32);     // lumps along the top
@@ -32,7 +36,7 @@ export function makeRock(i, n, L, seed) {
         return { x: lerp(p[0], q[0], t), y: lerp(p[1], q[1], t), a: Math.atan2(q[1] - p[1], q[0] - p[0]) };
     };
     const top = Math.min(...pts.map(p => p[1]));
-    return { i, cx, w, h, base, top, pts, at, seed: seed * 31 + i * 977, tone: r(), slot };
+    return { i, cx, w, h, base, top, pts, at, seed: seed * 31 + i * 977, tone: ledge ? 1.6 : r(), slot, ledge };
 }
 
 function drawRock(ctx, R, H) {
@@ -40,8 +44,9 @@ function drawRock(ctx, R, H) {
     ctx.fillStyle = 'rgba(40,30,20,0.22)';                  // its shadow on the sand
     ctx.beginPath(); ctx.ellipse(R.cx + R.w * 0.04, R.base + H * 0.004, R.w * 0.56, H * 0.014, 0, 0, TAU); ctx.fill();
 
-    const light = mix([158, 146, 132], [124, 132, 142], R.tone);
-    const dark = mix([62, 54, 52], [44, 48, 60], R.tone);
+    const light = mix([158, 146, 132], [124, 132, 142], Math.min(1, R.tone));
+    const dark = mix([62, 54, 52], [44, 48, 60], Math.min(1, R.tone));
+    if (R.tone > 1) { light[0] -= 44; light[1] -= 34; light[2] -= 22; }   // the ledge is darker stone
     const path = () => {
         ctx.beginPath();
         const p = R.pts;
@@ -86,8 +91,29 @@ function drawRock(ctx, R, H) {
     ctx.stroke();
 }
 
-/** Draw the ridge, the sand and the rocks into a layer of the scene's size. */
-export function buildStatic(L, rocks, seed, scale) {
+/** A rock the sand still covers: a low mound, and a corner of stone. */
+function drawBuried(ctx, R, H) {
+    const r = seeded(R.seed + 9);
+    const g = ctx.createLinearGradient(0, R.base - H * 0.04, 0, R.base + H * 0.01);
+    g.addColorStop(0, rgb(mix(SAND, [255, 244, 214], 0.4)));
+    g.addColorStop(1, rgb(SAND_DEEP));
+    ctx.fillStyle = 'rgba(70,50,26,0.16)';
+    ctx.beginPath(); ctx.ellipse(R.cx + R.w * 0.05, R.base + H * 0.006, R.w * 0.6, H * 0.012, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = rgb(mix([120, 116, 112], [90, 92, 100], r()));
+    ctx.beginPath(); ctx.ellipse(R.cx + (r() - 0.5) * R.w * 0.3, R.base - H * 0.03, R.w * 0.16, H * 0.022, r() - 0.5, 0, TAU); ctx.fill();
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(R.cx - R.w * 0.62, R.base + H * 0.012);
+    ctx.bezierCurveTo(R.cx - R.w * 0.3, R.base - H * 0.05, R.cx + R.w * 0.3, R.base - H * 0.046, R.cx + R.w * 0.62, R.base + H * 0.012);
+    ctx.closePath(); ctx.fill();
+    for (let k = 0; k < 14; k++) {
+        ctx.fillStyle = `rgba(120,92,56,${0.1 + r() * 0.2})`;
+        ctx.fillRect(R.cx + (r() - 0.5) * R.w * 0.9, R.base - r() * H * 0.03, 1.5, 1.2);
+    }
+}
+
+/** Draw the ridge, the sand and the rocks (on: which lie bare) into a layer of the scene's size. */
+export function buildStatic(L, rocks, on, seed, scale) {
     const { SW, H } = L;
     const { canvas, ctx } = layer(SW, H, scale);
     const r = seeded(seed * 13 + 3);
@@ -171,7 +197,10 @@ export function buildStatic(L, rocks, seed, scale) {
         ctx.beginPath(); ctx.ellipse(x - s * 0.25, y - s * 0.2, s * 0.4, s * 0.2, 0, 0, TAU); ctx.fill();
     }
 
-    for (const R of rocks) drawRock(ctx, R, H);
+    for (const R of rocks) {
+        if (on[R.i]) drawRock(ctx, R, H);
+        else if (!R.ledge) drawBuried(ctx, R, H);
+    }
     return canvas;
 }
 

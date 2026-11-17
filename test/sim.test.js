@@ -7,7 +7,8 @@ import { TIDE, tideOf, seasonOfTide } from '../js/core/tide.js';
 const M0 = 25_000_000;              // a minute in 2025
 const bare = (seed = 1) => {
     const st = newPool(seed, M0);
-    for (const r of st.rocks) Object.assign(r, { sp: 0, g: 0, calm: 0, cairn: false });
+    st.rocks.forEach((r, i) => Object.assign(r, { sp: 0, g: 0, calm: 0, cairn: false, on: i < 10 }));
+    st.stones = 5;
     return st;
 };
 const tideIn = season => { let n = tideOf(M0); while (seasonOfTide(n) !== season) n++; return n; };
@@ -22,21 +23,28 @@ test('the same seed gives the same pool', () => {
 
 test('a new pool is alive, with an empty journal', () => {
     const st = newPool(7, M0);
-    assert.equal(st.rocks.length, 10);
-    assert.ok(st.rocks.some(r => r.sp !== SP.BARE));
+    assert.equal(st.rocks.length, 13);
+    assert.deepEqual(st.rocks.map((r, i) => (r.on ? i : -1)).filter(i => i >= 0), [3, 4, 5, 6]);
+    assert.equal(st.stones, 2);
+    assert.ok(st.rocks.some(r => r.on && r.sp !== SP.BARE));
+    assert.ok(st.rocks.every(r => r.on || r.sp === SP.BARE));
     assert.equal(st.journal.length, 0);
     assert.equal(st.last, tideOf(M0));
 });
 
 test('growth stays in 0-255 and species are valid over many tides', () => {
     const st = newPool(3, M0);
+    st.rocks.forEach(r => { r.on = true; });
+    const seen = new Set();
     for (let i = 0; i < 5000; i++) {
         simTide(st, st.last + 1);
         for (const r of st.rocks) {
-            assert.ok(r.g >= 0 && r.g <= 255 && r.sp >= 0 && r.sp <= 8 && r.calm <= 255);
+            assert.ok(r.g >= 0 && r.g <= 255 && r.sp >= 0 && r.sp <= 11 && r.calm <= 255);
             assert.ok(stage(r.g) <= 3);
         }
+        st.rocks.forEach((r, k) => { seen.add(r.sp); assert.ok(k >= 10 || r.sp <= 8, 'ledge life stays on the ledge'); assert.ok(k < 10 || [0, 1, 3, 8, 9, 10, 11].includes(r.sp)); });
     }
+    for (let sp = 0; sp <= 11; sp++) assert.ok(seen.has(sp), `species ${sp} never appeared`);
     assert.ok(st.journal.length <= 200);
 });
 
@@ -73,8 +81,8 @@ test('an anemone needs twelve days of quiet, a sea star eight', () => {
 });
 
 test('winter halves growth, summer adds a quarter', () => {
-    const g = season => { const st = bare(5); st.open = 1; Object.assign(st.rocks[0], { sp: SP.MUSS, g: 20 }); simTide(st, tideIn(season)); return st.rocks[0].g; };
-    const noStorm = season => { for (let s = 1; s < 50; s++) { const st = bare(s); st.open = 1; Object.assign(st.rocks[0], { sp: SP.MUSS, g: 20 }); simTide(st, tideIn(season)); if (st.lastStorm < 0) return st.rocks[0].g; } };
+    const g = season => { const st = bare(5); Object.assign(st.rocks[0], { sp: SP.MUSS, g: 20 }); simTide(st, tideIn(season)); return st.rocks[0].g; };
+    const noStorm = season => { for (let s = 1; s < 50; s++) { const st = bare(s); Object.assign(st.rocks[0], { sp: SP.MUSS, g: 20 }); simTide(st, tideIn(season)); if (st.lastStorm < 0) return st.rocks[0].g; } };
     assert.equal(noStorm(0), 24);
     assert.equal(noStorm(1), 28);
     assert.equal(noStorm(2), 30);
@@ -118,7 +126,7 @@ test('catching up is capped', () => {
 
 test('arriving: a short absence is free, a long one walks the rocks', () => {
     const st = newPool(21, M0);
-    Object.assign(st.rocks[0], { sp: SP.BARN, g: 200, calm: 5, cairn: false });
+    Object.assign(st.rocks[0], { sp: SP.BARN, g: 200, calm: 5, cairn: false, on: true });
     const t0 = 1_000_000_000_000;
     let res = arrive(st, t0, M0);
     assert.equal(res.walked, false);
@@ -152,6 +160,10 @@ test('the save goes round, and rubbish is refused', () => {
     assert.equal(save(store, st), true);
     assert.deepEqual(load(store), st);
     assert.equal(migrate({ v: 99, rocks: [], last: 1 }), null);
+    const old = migrate({ v: 1, last: 5, open: 10, stones: 5, rocks: Array.from({ length: 10 }, () => ({ sp: 2, g: 9, calm: 1, cairn: false, name: '' })) });
+    assert.equal(old.rocks.length, 13);
+    assert.deepEqual(old.rocks.map(r => r.on), [...Array(10).fill(true), false, false, false]);
+    assert.equal(old.v, 2);
     assert.equal(migrate('x'), null);
     mem.set('lowwater.save', '{oops');
     assert.equal(load(store), null);

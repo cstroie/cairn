@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LANGS, setLang, t, duration, sentence } from '../js/i18n.js';
 import { EVENTS, SP } from '../js/core/sim.js';
+import { ALBUM } from '../js/core/world.js';
 
 test('every language has the same keys, of the same kind', () => {
     const keys = Object.keys(LANGS.en).sort();
@@ -12,16 +13,25 @@ test('every language has the same keys, of the same kind', () => {
             if (Array.isArray(LANGS.en[k])) assert.equal(lang[k].length, LANGS.en[k].length, `${code}.${k}`);
         }
         assert.deepEqual(Object.keys(lang.ev).sort(), [...EVENTS].sort(), code);
+        for (const k of ['kind', 'hint', 'unlock', 'album']) assert.deepEqual(Object.keys(lang[k]).sort(), Object.keys(LANGS.en[k]).sort(), `${code}.${k}`);
+        const pages = ALBUM.filter(a => !a.sp).map(a => a.id).sort();
+        assert.deepEqual(Object.keys(lang.album).sort(), pages, `${code}.album`);
+        for (const v of Object.values(lang.album)) assert.ok(v.length === 2 && v[0] && v[1].length > 20);
+        for (let i = 1; i < 12; i++) assert.ok(lang.fact[i].length > 20 && lang.desc[i] && lang.sp[i], `${code} species ${i}`);
+        assert.deepEqual(Object.keys(lang.kind).sort(), [...new Set(ALBUM.map(a => a.kind))].sort());
     }
 });
 
 test('every journal sentence can be said in every language', () => {
-    const cases = { storm: [0], torn: [2, 3, 4], settle: [2, 3, 4], bloom: [5], graze: [8], ate: [6], died: [2, 3, 4, 5], left: [6, 7, 8], visit: [7], step: [2, 3, 4, 5] };
+    const cases = { storm: [0], torn: [2, 3, 4], settle: [2, 3, 4, 9], bloom: [5], graze: [8], ate: [6, 10], died: [2, 3, 4, 5, 9], left: [6, 7, 8, 10, 11], visit: [7, 11], step: [2, 3, 4, 5, 9],
+        uncover: [0], rescue: [0, 6], clean: [0], look: [0] };
     for (const code of Object.keys(LANGS)) {
         setLang(code);
         for (const [evName, list] of Object.entries(cases)) for (const sp of list) {
-            const s = sentence({ evName, sp }, 'X');
-            assert.ok(s.length > 8 && !s.includes('undefined'), `${code} ${evName} ${sp}: ${s}`);
+            for (const rock of ['X', '']) {
+                const s = sentence({ evName, sp }, rock);
+                assert.ok(s.length > 8 && !s.includes('undefined'), `${code} ${evName} ${sp}: ${s}`);
+            }
         }
     }
     assert.equal(SP.URCH, 8);

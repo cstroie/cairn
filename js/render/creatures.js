@@ -43,7 +43,7 @@ function barnacles(ctx, R, g, t, S) {
         ctx.save();
         ctx.translate(p.x, p.y + s * 0.3); ctx.rotate(p.a * 0.8);
         if (wet > 0.3) {                                           // feeding: the feathered legs sweep
-            const beat = Math.max(0, Math.sin(t * 2.6 + ph * 20)) * wet;
+            const beat = Math.max(0, Math.sin(t * 2.6 + ph * 20)) * wet * (1 - S.poke);
             ctx.strokeStyle = 'rgba(250,232,210,0.85)'; ctx.lineWidth = 1; ctx.lineCap = 'round';
             for (let k = -2; k <= 2; k++) {
                 const a = -Math.PI / 2 + k * 0.3 + Math.sin(t * 2.6 + ph * 20) * 0.25;
@@ -81,7 +81,7 @@ function kelp(ctx, R, g, t, S) {
         let a = -Math.PI / 2 + side * 0.12, x = p.x, y = p.y;
         for (let k = 1; k <= SEG; k++) {
             const wet = under(S, y);
-            const sway = Math.sin(t * 0.9 + k * 0.42 + ph + x * 0.01) * (0.05 + 0.02 * k) * (0.5 + S.wind);
+            const sway = Math.sin(t * (0.9 + 5 * S.poke) + k * 0.42 + ph + x * 0.01) * (0.05 + 0.02 * k) * (0.5 + S.wind + S.poke);
             const up = -Math.PI / 2 + side * 0.1 + sway * 4;
             a = lerp(a, up, 0.5) * wet + (1 - wet) * (a + side * 0.42);   // in the air it falls over
             a = clamp(a, -Math.PI * 1.42, Math.PI * 0.42);
@@ -135,7 +135,7 @@ function mussels(ctx, R, g, t, S) {
         ctx.fill();
         ctx.strokeStyle = 'rgba(190,206,240,0.32)'; ctx.lineWidth = 1.2;
         ctx.beginPath(); ctx.moveTo(-s * 0.3, -s * 0.2); ctx.quadraticCurveTo(-s * 0.42, -s * 0.9, -s * 0.06, -s * 1.22); ctx.stroke();
-        if (wet > 0.5) {                                           // open a crack to feed
+        if (wet > 0.5 && S.poke < 0.2) {                           // open a crack to feed
             ctx.strokeStyle = `rgba(240,160,90,${0.6 * wet * (0.6 + 0.4 * Math.sin(t * 1.3 + u * 30))})`;
             ctx.lineWidth = 1.4;
             ctx.beginPath(); ctx.moveTo(s * 0.08, -s * 0.1); ctx.quadraticCurveTo(s * 0.42, -s * 0.7, s * 0.1, -s * 1.3); ctx.stroke();
@@ -150,7 +150,7 @@ function anemone(ctx, R, g, t, S) {
     const r = seeded(R.seed + 505);
     const p = R.at(0.4 + 0.2 * r());
     const s = R.w * (0.13 + 0.17 * g / 255);
-    const open = under(S, p.y - s * 0.9);
+    const open = under(S, p.y - s * 0.9) * (1 - S.poke);      // touched, it folds up
     const [body, tip] = ANEMONE[Math.floor(r() * 4)];
     ctx.save();
     ctx.translate(p.x, p.y + s * 0.12);
@@ -198,7 +198,7 @@ function seaStar(ctx, R, g, t, S) {
     const p = R.at(0.5 + 0.22 * Math.sin(t * 0.021 + r() * 6));    // slow as a thought
     const s = R.w * (0.17 + 0.12 * g / 255);
     ctx.save();
-    ctx.translate(p.x, p.y + s * 0.1); ctx.rotate(p.a + Math.sin(t * 0.05) * 0.3); ctx.scale(1, 0.72);
+    ctx.translate(p.x, p.y + s * 0.1); ctx.rotate(p.a + Math.sin(t * 0.05) * 0.3 + S.poke * 0.5); ctx.scale(1 - 0.14 * S.poke, 0.72 * (1 - 0.14 * S.poke));
     const gr = ctx.createRadialGradient(0, 0, 0, 0, 0, s);
     gr.addColorStop(0, '#f6b25c'); gr.addColorStop(1, '#d4502c');
     ctx.fillStyle = gr;
@@ -224,23 +224,24 @@ function seaStar(ctx, R, g, t, S) {
 function hermit(ctx, R, g, t, S) {
     const r = seeded(R.seed + 707);
     const ph = r() * 6, walk = t * 0.22 + ph;
-    const pause = Math.sin(walk * 2.7) > 0.55;                     // it stops to look around
+    const hid = S.poke > 0.25;                                     // touched, it pulls into the shell
+    const pause = hid || Math.sin(walk * 2.7) > 0.55;              // it stops to look around
     const p = R.at(0.5 + 0.34 * Math.sin(walk));
     const dir = Math.cos(walk) >= 0 ? 1 : -1;
     const s = R.w * 0.13, step = pause ? 0 : t * 9;
     ctx.save();
     ctx.translate(p.x, p.y - s * 0.55 - (pause ? 0 : Math.abs(Math.sin(step)) * s * 0.08)); ctx.rotate(p.a * 0.6); ctx.scale(dir, 1);
     ctx.strokeStyle = '#b4502e'; ctx.lineWidth = s * 0.14; ctx.lineCap = 'round';
-    for (let k = 0; k < 3; k++) {                                  // legs
+    for (let k = 0; k < (hid ? 0 : 3); k++) {                      // legs
         const sw = Math.sin(step + k * 2.1) * s * 0.22;
         ctx.beginPath(); ctx.moveTo(s * (0.3 + k * 0.16), s * 0.1);
         ctx.quadraticCurveTo(s * (0.55 + k * 0.2) + sw, s * 0.1, s * (0.6 + k * 0.22) + sw, s * 0.62);
         ctx.stroke();
     }
     ctx.fillStyle = '#c85e34';                                     // the claw
-    ctx.beginPath(); ctx.ellipse(s * 1.12, s * 0.22 + Math.sin(t * 2 + ph) * s * 0.06, s * 0.3, s * 0.2, 0.3, 0, TAU); ctx.fill();
+    if (!hid) { ctx.beginPath(); ctx.ellipse(s * 1.12, s * 0.22 + Math.sin(t * 2 + ph) * s * 0.06, s * 0.3, s * 0.2, 0.3, 0, TAU); ctx.fill(); }
     ctx.strokeStyle = '#c85e34'; ctx.lineWidth = s * 0.07;         // eyes on stalks
-    for (const e of [0.62, 0.84]) {
+    for (const e of hid ? [] : [0.62, 0.84]) {
         ctx.beginPath(); ctx.moveTo(s * e, -s * 0.05); ctx.lineTo(s * (e + 0.12), -s * 0.52); ctx.stroke();
         ctx.fillStyle = '#16121a'; ctx.beginPath(); ctx.arc(s * (e + 0.12), -s * 0.56, s * 0.085, 0, TAU); ctx.fill();
     }
@@ -271,7 +272,7 @@ function urchin(ctx, R, g, t, S) {
     ctx.lineCap = 'round';
     for (let k = 0; k < 34; k++) {
         const a = Math.PI * (0.92 + 1.16 * k / 33) + Math.sin(t * 0.9 + k * 1.3) * 0.07;
-        const len = s * (1.5 + 0.5 * ((k * 5) % 7) / 7);
+        const len = s * (1.5 + 0.5 * ((k * 5) % 7) / 7) * (1 + 0.3 * S.poke);
         ctx.strokeStyle = k % 3 ? '#4a2a6a' : '#7a4a9e';
         ctx.lineWidth = s * 0.07;
         ctx.beginPath(); ctx.moveTo(Math.cos(a) * s * 0.7, Math.sin(a) * s * 0.7);
@@ -284,12 +285,97 @@ function urchin(ctx, R, g, t, S) {
     ctx.restore();
 }
 
-const DRAW = [null, film, barnacles, kelp, mussels, anemone, seaStar, hermit, urchin];
+function sponge(ctx, R, g, t, S) {
+    const r = seeded(R.seed + 909);
+    const n = 5 + stage(g) * 3;
+    const list = Array.from({ length: n }, () => [0.15 + 0.7 * r(), r(), r()]).sort((a, b) => a[2] - b[2]);
+    for (const [u, sz, d] of list) {
+        const p = R.at(u), s = R.w * (0.07 + 0.07 * sz) * size(g);
+        const gr = ctx.createRadialGradient(p.x - s * 0.3, p.y - s * 0.5, s * 0.1, p.x, p.y, s * 1.2);
+        gr.addColorStop(0, '#ffd27a'); gr.addColorStop(0.6, '#e9952f'); gr.addColorStop(1, '#a85a18');
+        ctx.fillStyle = gr;
+        ctx.beginPath(); ctx.ellipse(p.x, p.y - s * 0.2 + d * s * 0.3, s * 1.15, s * 0.8, p.a, 0, TAU); ctx.fill();
+        ctx.fillStyle = 'rgba(70,30,8,0.75)';                      // the holes it breathes out of
+        const hole = s * 0.2 * (1 - 0.6 * S.poke);
+        ctx.beginPath(); ctx.ellipse(p.x + (sz - 0.5) * s * 0.5, p.y - s * 0.55 + d * s * 0.3, hole, hole * 0.6, 0, 0, TAU); ctx.fill();
+    }
+}
 
-/** Draw what lives on rock R. */
+function nudibranch(ctx, R, g, t, S) {
+    const r = seeded(R.seed + 1010);
+    const crawl = t * 0.035 + r() * 6;
+    const p = R.at(0.5 + 0.3 * Math.sin(crawl)), dir = Math.cos(crawl) >= 0 ? 1 : -1;
+    const s = R.w * 0.2;
+    ctx.save();
+    ctx.translate(p.x, p.y - s * 0.12); ctx.rotate(p.a); ctx.scale(dir, 1);
+    const squeeze = 1 - 0.25 * S.poke;
+    const gr = ctx.createLinearGradient(0, -s * 0.3, 0, s * 0.15);
+    gr.addColorStop(0, '#f4f8ff'); gr.addColorStop(1, '#9db8f0');
+    ctx.fillStyle = gr;
+    ctx.beginPath();
+    ctx.moveTo(-s * squeeze, s * 0.1);
+    ctx.bezierCurveTo(-s * 0.8 * squeeze, -s * 0.3, s * 0.6 * squeeze, -s * 0.34, s * squeeze, -s * 0.02);
+    ctx.bezierCurveTo(s * 0.9 * squeeze, s * 0.16, -s * 0.6, s * 0.18, -s * squeeze, s * 0.1);
+    ctx.fill();
+    ctx.lineCap = 'round'; ctx.lineWidth = s * 0.07;
+    for (let k = 0; k < 9; k++) {                                  // the cerata on its back
+        const x = -s * 0.75 + k * s * 0.17, len = s * (0.26 + 0.12 * Math.sin(k * 2.3)) * (1 - 0.5 * S.poke);
+        const sw = Math.sin(t * 1.3 + k) * s * 0.05;
+        ctx.strokeStyle = k % 2 ? '#ff7a3c' : '#ffb03c';
+        ctx.beginPath(); ctx.moveTo(x * squeeze, -s * 0.2); ctx.lineTo(x * squeeze - s * 0.05 + sw, -s * 0.2 - len); ctx.stroke();
+    }
+    ctx.strokeStyle = '#6a50c8'; ctx.lineWidth = s * 0.06;         // the horns it smells with
+    for (const dx of [0.72, 0.86]) { ctx.beginPath(); ctx.moveTo(s * dx * squeeze, -s * 0.16); ctx.lineTo(s * (dx + 0.08) * squeeze, -s * 0.42 * (1 - 0.5 * S.poke)); ctx.stroke(); }
+    ctx.restore();
+}
+
+function brittle(ctx, R, g, t, S) {
+    const r = seeded(R.seed + 1111);
+    const p = R.at(0.35 + 0.3 * r());
+    const s = R.w * 0.07;
+    ctx.save();
+    ctx.translate(p.x, p.y - s * 0.3); ctx.rotate(p.a);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (let k = 0; k < 5; k++) {
+        const a0 = -Math.PI / 2 + (k - 2) * 0.62;
+        ctx.beginPath(); ctx.moveTo(0, 0);
+        let x = 0, y = 0, a = a0;
+        for (let j = 1; j <= 9; j++) {
+            a += Math.sin(t * (1.6 + 4 * S.poke) + k * 1.9 + j * 0.7) * 0.22 + (k - 2) * 0.03;
+            x += Math.cos(a) * s * 0.5 * (1 - 0.4 * S.poke); y += Math.sin(a) * s * 0.5 * (1 - 0.4 * S.poke);
+            ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = '#6b4a32'; ctx.lineWidth = s * 0.24; ctx.stroke();
+        ctx.strokeStyle = '#c9a070'; ctx.lineWidth = s * 0.1; ctx.setLineDash([s * 0.2, s * 0.3]); ctx.stroke(); ctx.setLineDash([]);
+    }
+    const gr = ctx.createRadialGradient(-s * 0.2, -s * 0.2, 0, 0, 0, s * 0.7);
+    gr.addColorStop(0, '#d9b384'); gr.addColorStop(1, '#6b4a32');
+    ctx.fillStyle = gr;
+    ctx.beginPath(); ctx.arc(0, 0, s * 0.62, 0, TAU); ctx.fill();
+    ctx.restore();
+}
+
+const DRAW = [null, film, barnacles, kelp, mussels, anemone, seaStar, hermit, urchin, sponge, nudibranch, brittle];
+
+/** Draw what lives on rock R. S: { yWater, H, wind, poke }. */
 export function drawCreature(ctx, R, rock, t, S) {
     const fn = DRAW[rock.sp];
     if (!fn) return;
-    if (rock.sp >= 2 && rock.sp <= 5) film(ctx, R, 70, t, S);       // settled things sit on a little green
+    if ((rock.sp >= 2 && rock.sp <= 5) || rock.sp === 9) film(ctx, R, 70, t, S);   // settled things sit on a little green
     fn(ctx, R, rock.g, t, S);
+}
+
+/** A small picture of a species at growth g, for the field guide: a w x h box. */
+export function portrait(ctx, sp, g, w, h, t = 0) {
+    const base = h * 0.92, rw = w * 0.74, rh = h * 0.3, cx = w / 2;
+    const top = u => { const a = Math.PI * (1 - (0.1 + 0.8 * u)); return [cx + Math.cos(a) * rw / 2, base - Math.pow(Math.sin(a), 0.8) * rh]; };
+    const R = { cx, w: rw, h: rh, base, i: 0, seed: 4242 + sp * 13,
+        at: u => { const [x, y] = top(u), [x2, y2] = top(Math.min(1, u + 0.02)); return { x, y, a: Math.atan2(y2 - y, x2 - x) }; } };
+    const gr = ctx.createLinearGradient(0, base - rh, 0, base);
+    gr.addColorStop(0, '#9a9288'); gr.addColorStop(1, '#4a464c');
+    ctx.fillStyle = gr;
+    ctx.beginPath(); ctx.moveTo(cx - rw / 2, base);
+    for (let u = -0.125; u <= 1.13; u += 0.05) { const [x, y] = top(u); ctx.lineTo(x, Math.min(base, y)); }
+    ctx.lineTo(cx + rw / 2, base); ctx.closePath(); ctx.fill();
+    drawCreature(ctx, R, { sp, g }, t, { yWater: -h, H: h * 2.2, wind: 0.3, poke: 0 });
 }

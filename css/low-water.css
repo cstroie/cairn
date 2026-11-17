@@ -30,6 +30,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 #tidechip .txt { min-width: 0; }
 
 #tools { position: absolute; top: calc(10px + var(--safe-t)); right: calc(10px + var(--safe-r)); display: flex; gap: 8px; }
+@media (max-width: 520px) { #tools { flex-direction: column; } #tidechip { max-width: calc(100vw - 80px); } }
 #tools button { width: 46px; height: 46px; border-radius: 50%; border: 0; background: var(--paper); box-shadow: 0 4px 18px rgba(8, 20, 40, 0.22); display: grid; place-items: center; transition: transform 0.12s; }
 #tools button:active { transform: scale(0.92); }
 #tools svg, .x svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
@@ -87,15 +88,39 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .switch[aria-checked="true"]::after { left: 25px; }
 .about { font-size: 13px; opacity: 0.7; }
 
-#banners { position: fixed; left: 0; right: 0; top: calc(112px + var(--safe-t)); display: grid; justify-items: center; gap: 8px; pointer-events: none; z-index: 6; padding: 0 12px; }
+#banners { position: fixed; left: 0; right: 0; top: calc(66px + var(--safe-t)); display: grid; justify-items: center; gap: 8px; pointer-events: none; z-index: 6; padding: 0 12px; }
 .banner { pointer-events: auto; background: rgba(16, 32, 52, 0.94); color: #fff; border-radius: 16px; padding: 10px 14px; font-size: 14px; display: flex; gap: 10px; align-items: center; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35); animation: rise2 0.25s ease-out; max-width: 520px; }
 @keyframes rise2 { from { opacity: 0; transform: translateY(10px); } }
+.banner.toast { pointer-events: none; }
 .banner button { border: 0; border-radius: 10px; padding: 7px 11px; background: rgba(255, 255, 255, 0.16); color: #fff; font-weight: 700; white-space: nowrap; }
 .banner button.primary { background: #58c4c0; color: #06222c; }
 
+.two { display: flex; gap: 8px; }
+.two .btn { flex: 1; padding: 11px 8px; }
+#card p.note { font-size: 12px; opacity: 0.6; margin-top: 8px; min-height: 1em; }
+#peek { position: absolute; left: 50%; bottom: calc(12px + var(--safe-b)); transform: translateX(-50%); width: min(94vw, 520px); display: flex; align-items: center; gap: 10px; padding: 8px 10px; }
+#peek[hidden] { display: none; }
+#peek input { flex: 1; accent-color: var(--sea); min-width: 0; }
+#peek b { font-variant-numeric: tabular-nums; min-width: 3.2em; text-align: center; }
+#peek button { border: 0; background: rgba(34, 48, 60, 0.1); width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+body.peeking #card, body.peeking #stones { display: none; }
+.sheet h4 { margin: 16px 0 8px; font-size: 15px; }
+.sheet h4 small { opacity: 0.55; font-weight: 400; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px; }
+.tile { border: 0; background: none; padding: 0; display: grid; gap: 4px; justify-items: center; font-size: 11px; line-height: 1.2; text-align: center; }
+.tile canvas, .tile i { width: 72px; height: 72px; border-radius: 16px; display: grid; place-items: center; box-shadow: 0 2px 6px rgba(8, 20, 40, 0.18); }
+.tile i { background: rgba(34, 48, 60, 0.08); font-style: normal; font-size: 30px; opacity: 0.4; box-shadow: none; border: 2px dashed rgba(34, 48, 60, 0.25); }
+.tile.unknown span { opacity: 0.45; }
+.tile.sel canvas, .tile.sel i { outline: 3px solid var(--sea); outline-offset: 2px; }
+.page { position: sticky; top: 0; z-index: 1; background: #fff; border-radius: 16px; padding: 12px 14px; box-shadow: 0 6px 20px rgba(8, 20, 40, 0.16); margin-bottom: 4px; }
+.page[hidden] { display: none; }
+.page p { margin: 4px 0 0; font-family: var(--serif); font-size: 15px; }
+.letter { background: #fbf3d9; border-radius: 6px; padding: 18px 20px; margin: 14px 0 4px; box-shadow: inset 0 0 30px rgba(160, 120, 50, 0.25); transform: rotate(-1deg); }
+.letter p { font-family: var(--serif); font-style: italic; font-size: 18px; margin: 0; }
 @media (orientation: portrait) {
-    #card { bottom: auto; top: calc(112px + var(--safe-t)); }
-    #latest { top: auto; bottom: calc(14px + var(--safe-b)); }
+    #card { bottom: auto; top: calc(112px + var(--safe-t)); left: calc(10px + var(--safe-l)); right: calc(66px + var(--safe-r)); width: auto; transform: none; animation: none; }
+    #latest { top: 43%; }
+    #banners { top: 48%; }
 }
 @media (max-height: 460px) {
     #card { bottom: calc(8px + var(--safe-b)); left: auto; right: calc(8px + var(--safe-r)); transform: none; width: min(60vw, 400px); animation: none; }

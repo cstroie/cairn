@@ -1,6 +1,6 @@
 /* Română. */
-const sp = ['stâncă goală', 'alge', 'balani', 'varec', 'midii', 'anemonă', 'stea de mare', 'pagur', 'arici de mare'];
-const the = ['stânca goală', 'algele', 'balanii', 'varecul', 'midiile', 'anemona', 'steaua de mare', 'pagurul', 'ariciul de mare'];
+const sp = ['stâncă goală', 'alge', 'balani', 'varec', 'midii', 'anemonă', 'stea de mare', 'pagur', 'arici de mare', 'burete de mare', 'melc de mare', 'ofiură'];
+const the = ['stânca goală', 'algele', 'balanii', 'varecul', 'midiile', 'anemona', 'steaua de mare', 'pagurul', 'ariciul de mare', 'buretele de mare', 'melcul de mare', 'ofiura'];
 const de = k => (k % 100 === 0 || k % 100 >= 20 ? ' de' : '');
 const n = (k, one, many) => (k === 1 ? one : `${k}${de(k)} ${many}`);
 
@@ -27,7 +27,24 @@ export default {
         'O anemonă de mare, deschisă în apă. Vine doar pe stâncile liniștite.',
         'O stea de mare, înceată ca un gând, care își croiește drum printre midii.',
         'Un pagur într-o cochilie de împrumut. Nu va rămâne.',
-        'Un arici de mare care paște. Varecul nu rezistă mult lângă el.'
+        'Un arici de mare care paște. Varecul nu rezistă mult lângă el.',
+        'Un burete de mare, o crustă moale și portocalie care bea marea prin o sută de găuri.',
+        'Un melc de mare în culori de carnaval, care își mănâncă drumul prin burete.',
+        'O ofiură, numai brațe, dispărută într-o crăpătură cum te uiți la ea.'
+    ],
+    fact: [
+        '',
+        'Algele își fac hrana din lumina soarelui, ca plantele. Aproape tot ce trăiește în baltă depinde de ele.',
+        'Balanul este rudă cu crabii și creveții. Își lipește capul de stâncă și își împinge hrana în gură cu picioarele.',
+        'Varecul nu este o plantă, ci o algă uriașă. Unele feluri cresc o jumătate de metru într-o singură zi.',
+        'Midia se leagă de stâncă cu fire pe care le toarce din piciorul ei, destul de tari ca să țină la furtună.',
+        'Anemona este un animal. Tentaculele ei înțeapă prada măruntă; scoasă din apă, se strânge ca o gelatină ca să rămână udă.',
+        'Steaua de mare își scoate stomacul pe gură și îl bagă în cochilia midiei ca să mănânce. Un braț pierdut îi crește la loc.',
+        'Pagurul are coada moale și trăiește într-o cochilie goală de melc. Când crește, se mută într-una mai mare.',
+        'Ariciul de mare merge pe sute de piciorușe mici și roade stânca cu cinci dinți.',
+        'Buretele este unul dintre cele mai vechi feluri de animale. Nu are gură, nici ochi, nici inimă.',
+        'Melcii de mare și-au pierdut cochilia de mult. Culorile lor vii le spun peștilor: am un gust îngrozitor.',
+        'Ofiura își poate lăsa un braț ca să scape și vâslește mai departe cu celelalte patru.'
     ],
     grown: ['Mărunt.', 'Tânăr.', 'Crescut.', 'În plină putere.'],
     highWater: 'Maree înaltă', lowWater: 'Maree joasă', flood: 'Vine fluxul', ebb: 'Apa se retrage',
@@ -35,7 +52,17 @@ export default {
     springTide: 'maree vie', neapTide: 'maree moartă',
     dayOfPool: 'ziua {n} a bălții',
     rockN: 'Stânca {n}',
+    ledgeN: 'Pragul {n}',
     rockOf: 'stânca {n} din {m}',
+    ledgeRock: 'Pragul Adânc',
+    buried: 'Încă sub nisip',
+    buriedSub: 'Găsește mai multe pentru ghidul tău și nisipul se va muta.',
+    lookUnder: 'Uită-te sub alge',
+    lookCost: 'Dacă te uiți, stânca își pierde liniștea.',
+    tooDeep: 'Sub apă: așteaptă să scadă mareea.',
+    ledgeDeep: 'Prea adânc ca să ajungi. Se arată doar la mareea joasă a mareelor vii.',
+    underFound: 'Sub alge: {name}!',
+    underSame: 'Nimic nou. Ce trăiește acolo încă se ascunde.',
     quiet: 'Liniștită de {d}.',
     quietNone: 'Abia călcată.',
     guarded: 'O moviliță o păzește.',
@@ -51,6 +78,75 @@ export default {
     tomorrow: 'mâine',
     tides: 'Maree', tidesSub: 'O maree durează 12 ore și 25 de minute. Iată ziua care urmează.',
     now: 'acum',
+    guide: 'Ghidul țărmului', guideSub: '{n} din {m} pagini găsite.',
+    kind: { life: 'Pe stânci', ledge: 'Pragul Adânc', shore: 'În jurul bălții', under: 'Sub alge', wonder: 'Minuni' },
+    hint: {
+        life: 'Ceva ce trăiește pe stânci, la una dintre mărimile lui. Lasă stâncile în pace și privește.',
+        ledge: 'Trăiește acolo unde ajung doar cele mai joase maree.',
+        shore: 'Privește apa, nisipul și cerul și atinge ce zărești.',
+        under: 'Uită-te sub algele unei stânci când apa e retrasă.',
+        wonder: 'O priveliște a mării sau a cerului. Revino mereu, la orice oră.'
+    },
+    unknown: 'Încă negăsit',
+    unlock: {
+        rock: 'Încă {n} de găsit și nisipul va dezveli o altă stâncă.',
+        stone: 'Încă {n} de găsit și marea va aduce o altă piatră de moviliță.',
+        ledge: 'Încă {n} de găsit și Pragul Adânc se va arăta la o maree vie.'
+    },
+    newPage: 'Nou în ghid: {name}',
+    newPages: '{n} pagini noi în ghid',
+    gotRock: 'Nisipul s-a mutat: o stâncă nouă a ieșit la iveală.',
+    gotStone: 'Marea a adus o piatră de moviliță. Ai una în plus.',
+    gotLedge: 'Mai în larg este un Prag Adânc. Se arată la cele mai joase maree vii.',
+    spotted: 'Ai zărit: {name}.',
+    rescued: 'L-ai dus înapoi în apă.',
+    cleaned: 'Gata. Nisipul este din nou curat.',
+    bottleTitle: 'Un mesaj într-o sticlă',
+    peek: 'Timpul pe repede-înainte', peekSub: 'Ziua de maree care urmează. Balta însăși nu se schimbă.',
+    play: 'Pornește', stop: 'Oprește',
+    alert: 'Vestea mareei joase', alertSub: 'O notificare aproape de mareea joasă, când browserul o permite.',
+    alertTitle: 'Maree joasă', alertBody: 'Balta s-a arătat. Vino să vezi.',
+    alertDenied: 'Notificările sunt blocate pentru această aplicație.',
+    album: {
+        fish: ['Cocoșel de mare', 'Un pește mic care poate rămâne într-o baltă, sau chiar pe uscat sub alge ude, până se întoarce mareea.'],
+        shrimp: ['Crevetă', 'Aproape străvezie, așa că peștii flămânzi se uită prin ea. Merge înainte și țâșnește înapoi.'],
+        gull: ['Pescăruș argintiu', 'Pescărușii dau drumul midiilor din zbor pe stânci, ca să le spargă.'],
+        wader: ['Scoicar', 'Ciocul lui lung și portocaliu este o unealtă cu care desprinde scoicile de pe stânci și deschide midiile.'],
+        seal: ['Focă', 'Foca își poate ține răsuflarea o jumătate de oră și doarme plutind în picioare, ca o sticlă.'],
+        dolphin: ['Delfini', 'Delfinii dorm cu câte o jumătate de creier pe rând, așa că nu uită niciodată să iasă să respire.'],
+        octopus: ['Caracatiță', 'Trei inimi, sânge albastru, niciun os. Se strecoară prin orice gaură mai largă decât ciocul ei.'],
+        jelly: ['Meduză', 'O meduză este mai mult apă. Nu are creier și plutește prin mări de 500 de milioane de ani.'],
+        shorecrab: ['Crab de țărm', 'Merge într-o parte pentru că așa i se îndoaie genunchii. Poate respira aer ore întregi.'],
+        winkle: ['Melc de țărm', 'Un melc de mare care trage o ușiță după el când se retrage apa.'],
+        limpet: ['Pălăria-chinezului', 'Paște la maree înaltă și se întoarce exact în același loc, o urmă pe piatră care îi vine ca turnată.'],
+        blenny: ['Pește-unt', 'Lung și alunecos ca untul. Tatăl se încolăcește în jurul icrelor și le păzește.'],
+        seaslug: ['Iepure de mare', 'Un melc mare și moale, cu urechi ca de iepure. Speriat, împroașcă cerneală purpurie.'],
+        eggs: ['Ouă de melc', 'Șiruri de văzuțe galbene lipite sub o lespede. Fiecare ține sute de ouă.'],
+        storm: ['Maree de furtună', 'Furtunile smulg de pe stânci ce a crescut. În locul rămas gol, viața nouă își găsește șansa.'],
+        springtide: ['Maree vie', 'Când soarele, pământul și luna se aliniază, apa urcă cel mai sus și coboară cel mai jos.'],
+        fullmoon: ['Lună plină', 'Luna trage marea spre ea. Această atracție, în timp ce pământul se învârte, este mareea.'],
+        lighthouse: ['Farul', 'Fiecare far clipește în ritmul lui, ca marinarii să știe pe care îl văd.'],
+        glow: ['Marea care sclipește', 'Viețuitoare mărunte din apă luminează albastru când sunt tulburate. Milioane dintre ele aprind un val.'],
+        rainbow: ['Curcubeu', 'Lumina soarelui, frântă și desfăcută de picăturile de ploaie. Îl vezi doar cu soarele în spate.'],
+        shooting: ['Stea căzătoare', 'Un fir de praf din spațiu care arde, sus deasupra mării, în mai puțin de o secundă.'],
+        bottle: ['Mesaj într-o sticlă', 'O sticlă poate pluti ani întregi. Cea mai veche găsită a stat pe mare 131 de ani.'],
+        rescue: ['O salvare', 'După furtună, viețuitoarele rămân sus pe nisip. Scoase din apă nu rezistă mult.'],
+        cleanup: ['Un țărm curat', 'Plasele pierdute prind animale ani de zile. Fiecare bucată luată de pe plajă contează.']
+    },
+    bottles: [
+        'Către cine găsește: marea este mai mare decât credeam. Ia-o încet.',
+        'Maree înaltă, maree joasă, maree înaltă. Aici nimic nu se grăbește. Tu de ce?',
+        'Am numărat valurile un ceas și am pierdut șirul de două ori. Îți recomand.',
+        'Dacă lași o stâncă în pace destul timp, se mută pe ea ceva minunat.',
+        'Tabelul mareelor este singurul mers al trenurilor care nu întârzie niciodată.',
+        'Pălăria-chinezului se întoarce zilnic acasă, în același loc. Mă gândesc la asta când mă rătăcesc.',
+        'Dragă găsitorule, luna a mișcat sticla asta mai mult decât vântul.',
+        'Aici nu ai nimic de câștigat. Am verificat. Este mai bine așa.',
+        'Balanii așteaptă jumătate din viață să se întoarcă apa. Se întoarce mereu.',
+        'Am botezat o stâncă după sora mea. Încă nu m-a iertat.',
+        'Uită-te sub alge, dar pune-le la loc cum le-ai găsit.',
+        'Salutări de pe celălalt mal al golfului. Și aici bălțile sunt frumoase.'
+    ],
     settings: 'Setări',
     language: 'Limbă', sound: 'Sunet', bell: 'Clopotul mareei',
     bellSub: 'Bate când se schimbă mareea și la maree joasă.',
@@ -75,13 +171,17 @@ export default {
     ev: {
         storm: () => 'Un val de furtună a răscolit balta.',
         torn: (s, rock) => `Furtuna a smuls ${the[s]} de pe ${rock}.`,
-        settle: (s, rock) => `${{ 2: 'S-au prins balani', 3: 'S-a prins varec', 4: 'S-au prins midii' }[s]} pe ${rock}.`,
+        settle: (s, rock) => `${{ 2: 'S-au prins balani', 3: 'S-a prins varec', 4: 'S-au prins midii', 9: 'S-a prins un burete de mare' }[s]} pe ${rock}.`,
         bloom: (s, rock) => `O anemonă s-a deschis printre balani pe ${rock}.`,
         graze: (s, rock) => `Un arici de mare a găsit varecul de pe ${rock}.`,
-        ate: (s, rock) => `O stea de mare a venit la midiile de pe ${rock}.`,
-        died: (s, rock) => `${{ 2: `Balanii de pe ${rock} s-au desprins`, 3: `Varecul de pe ${rock} s-a desprins`, 4: `Midiile de pe ${rock} s-au desprins`, 5: `Anemona de pe ${rock} s-a stins` }[s]}. A rămas o pojghiță verde.`,
-        left: (s, rock) => `${{ 6: 'Steaua de mare', 7: 'Pagurul', 8: 'Ariciul de mare' }[s]} a plecat de pe ${rock}.`,
-        visit: (s, rock) => `Un pagur a urcat pe ${rock}.`,
-        step: (s, rock) => `Ai călcat pe ${the[s]} de pe ${rock}. N-a mai rămas nimic.`
+        ate: (s, rock) => (s === 10 ? `Un melc de mare a venit la buretele de pe ${rock}.` : `O stea de mare a venit la midiile de pe ${rock}.`),
+        died: (s, rock) => `${{ 2: `Balanii de pe ${rock} s-au desprins`, 3: `Varecul de pe ${rock} s-a desprins`, 4: `Midiile de pe ${rock} s-au desprins`, 5: `Anemona de pe ${rock} s-a stins`, 9: `Buretele de pe ${rock} s-a desprins` }[s]}. A rămas o pojghiță verde.`,
+        left: (s, rock) => `${{ 6: 'Steaua de mare', 7: 'Pagurul', 8: 'Ariciul de mare', 10: 'Melcul de mare', 11: 'Ofiura' }[s]} a plecat de pe ${rock}.`,
+        visit: (s, rock) => (s === 11 ? `O ofiură s-a strecurat pe ${rock}.` : `Un pagur a urcat pe ${rock}.`),
+        step: (s, rock) => `Ai călcat pe ${the[s]} de pe ${rock}. N-a mai rămas nimic.`,
+        uncover: (s, rock) => (rock ? `Nisipul s-a mutat: ${rock} a ieșit la iveală.` : 'În larg, un Prag Adânc s-a arătat deasupra apei.'),
+        rescue: s => (s === 6 ? 'Ai dus înapoi în apă o stea de mare rămasă pe uscat.' : 'Ai dus înapoi în apă un pește rămas pe uscat.'),
+        clean: () => 'Ai strâns ce a lăsat furtuna pe nisip.',
+        look: (s, rock) => `Te-ai uitat sub algele de pe ${rock}. Liniștea ei începe din nou.`
     }
 };

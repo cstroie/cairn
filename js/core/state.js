@@ -8,8 +8,10 @@ import { simTide, catchUp, trample } from './sim.js';
 import { tideOf } from './tide.js';
 
 export const KEY = 'lowwater.save';
-export const VERSION = 1;
-export const ROCKS = 10;
+export const VERSION = 2;
+export const ROCKS = 13;             // ten, and three on the Deep Ledge
+export const ORDER = [4, 5, 3, 6, 2, 7, 1, 8, 0, 9];     // the order the sand uncovers them
+export const START_ROCKS = 4, START_STONES = 2;
 export const VISIT_GAP = 10;        // minutes hidden after which you have left
 const PRE_AGE = 36;                 // tides a new pool has already seen
 
@@ -17,9 +19,9 @@ export function newPool(seed, M, settings) {
     const st = {
         v: VERSION, seed: seed >>> 0, rng: seed >>> 0,
         born: Math.floor(M), last: tideOf(M) - PRE_AGE - 1, seen: Math.floor(M), away: null,
-        open: ROCKS, stones: 5, lastStorm: -1,
-        rocks: Array.from({ length: ROCKS }, () => ({ sp: 0, g: 0, calm: 0, cairn: false, name: '' })),
-        journal: [], jseq: 0, album: {},
+        stones: START_STONES, lastStorm: -1, ledge: false,
+        rocks: Array.from({ length: ROCKS }, (_, i) => ({ sp: 0, g: 0, calm: 0, cairn: false, name: '', on: ORDER.indexOf(i) >= 0 && ORDER.indexOf(i) < START_ROCKS })),
+        journal: [], jseq: 0, album: {}, beach: null, bottles: 0, bottleDay: -1,
         settings: Object.assign({ lang: '', sound: true, bell: true, alert: false }, settings)
     };
     for (let n = st.last + 1; n <= tideOf(M); n++) simTide(st, n);
@@ -33,6 +35,12 @@ export function newPool(seed, M, settings) {
 export function migrate(st) {
     if (!st || typeof st !== 'object' || !Array.isArray(st.rocks) || typeof st.last !== 'number') return null;
     if (st.v > VERSION) return null;
+    if (st.v < 2) {                                         // version 1: ten rocks, all bare of sand, five stones
+        st.rocks.forEach(r => { r.on = true; });
+        while (st.rocks.length < ROCKS) st.rocks.push({ sp: 0, g: 0, calm: 0, cairn: false, name: '', on: false });
+        Object.assign(st, { ledge: false, beach: null, bottles: 0, bottleDay: -1 });
+        delete st.open;
+    }
     st.v = VERSION;
     st.journal = st.journal || [];
     st.album = st.album || {};

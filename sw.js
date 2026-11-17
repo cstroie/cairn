@@ -24,11 +24,13 @@ const SHELL = [
     'js/core/tide.js',
     'js/core/sim.js',
     'js/core/state.js',
+    'js/core/world.js',
     'js/render/util.js',
     'js/render/sky.js',
     'js/render/water.js',
     'js/render/rocks.js',
     'js/render/creatures.js',
+    'js/render/ambient.js',
     'js/render/scene.js',
     'js/audio/engine.js',
     'js/ui/icons.js',
@@ -72,4 +74,29 @@ self.addEventListener('fetch', event => {
     // This version's copy, else the network.
     event.respondWith(caches.open(CACHE).then(cache =>
         cache.match(req, { ignoreSearch: true }).then(hit => hit || fetch(req))));
+});
+
+/*
+ * The low water alert. Where the browser wakes the worker now and then
+ * (periodic background sync, an installed app), say so when low water is
+ * within the hour and it is day. The page writes what to say, and whether
+ * to say it, in the cache 'lw-prefs' (the worker cannot read the save).
+ */
+self.addEventListener('periodicsync', event => {
+    if (event.tag !== 'low-water') return;
+    event.waitUntil((async () => {
+        const res = await (await caches.open('lw-prefs')).match('alert');
+        const prefs = res ? await res.json() : null;
+        if (!prefs || !prefs.on) return;
+        const d = new Date();
+        const M = (Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), d.getMinutes()) - Date.UTC(1977, 11, 31)) / 60000;
+        const phase = M % 745;
+        if (phase < 312 || phase > 392 || d.getHours() < 8 || d.getHours() > 20) return;
+        await self.registration.showNotification(prefs.title, { body: prefs.body, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', tag: 'low-water' });
+    })());
+});
+
+self.addEventListener('notificationclick', event => {
+    event.notification.close();
+    event.waitUntil(self.clients.matchAll({ type: 'window' }).then(list => (list[0] ? list[0].focus() : self.clients.openWindow('./'))));
 });
