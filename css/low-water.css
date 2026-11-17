@@ -92,6 +92,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .banner { pointer-events: auto; background: rgba(16, 32, 52, 0.94); color: #fff; border-radius: 16px; padding: 10px 14px; font-size: 14px; display: flex; gap: 10px; align-items: center; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35); animation: rise2 0.25s ease-out; max-width: 520px; }
 @keyframes rise2 { from { opacity: 0; transform: translateY(10px); } }
 .banner.toast { pointer-events: none; }
+body:has(#panel:not([hidden])) .banner.toast { display: none; }   /* a toast never covers an open sheet */
 .banner button { border: 0; border-radius: 10px; padding: 7px 11px; background: rgba(255, 255, 255, 0.16); color: #fff; font-weight: 700; white-space: nowrap; }
 .banner button.primary { background: #58c4c0; color: #06222c; }
 
@@ -120,7 +121,7 @@ body.peeking #card, body.peeking #stones { display: none; }
 @media (orientation: portrait) {
     #card { bottom: auto; top: calc(112px + var(--safe-t)); left: calc(10px + var(--safe-l)); right: calc(66px + var(--safe-r)); width: auto; transform: none; animation: none; }
     #latest { top: 43%; }
-    #banners { top: 48%; }
+    #banners { top: auto; bottom: calc(16px + var(--safe-b)); }
 }
 @media (max-height: 460px) {
     #card { bottom: calc(8px + var(--safe-b)); left: auto; right: calc(8px + var(--safe-r)); transform: none; width: min(60vw, 400px); animation: none; }

@@ -193,7 +193,9 @@ export class Scene {
         drawBeach(ctx, L, t, ui.beach, hits);
 
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        for (const R of this.order) {                                   // the names, and the rock you are looking at
+        const tags = [];                                                // names already placed, so two never overlap
+        const order = [...this.order].sort((a, b) => (b.i === ui.sel) - (a.i === ui.sel) || b.base - a.base);
+        for (const R of order) {                                        // the names, and the rock you are looking at
             const sel = ui.sel === R.i, fs = clamp(L.unit * 0.15 * R.s, 10, 15);
             if (sel) {
                 ctx.strokeStyle = `rgba(255,255,255,${0.7 + 0.25 * Math.sin(t * 3)})`;
@@ -209,10 +211,14 @@ export class Scene {
                 R.cx + tw > Q.cx - Q.w * 0.5 && R.cx - tw < Q.cx + Q.w * 0.5 && y + fs * 0.6 > Q.top && y - fs * 0.6 < Q.base + Q.w * 0.1);
             let y = R.base + R.w * 0.2 + fs * 0.6;
             if (!free(y)) { const up = R.top - fs * 0.9; if (free(up) || sel) y = up; else continue; }
-            ctx.lineWidth = 3; ctx.lineJoin = 'round';
-            ctx.strokeStyle = sel ? 'rgba(10,24,40,0.75)' : 'rgba(10,24,40,0.45)';
-            ctx.strokeText(name, R.cx, y, R.w * 1.5);
-            ctx.fillStyle = sel ? '#fff' : 'rgba(255,255,255,0.86)';
+            const pw = tw * 2 + fs * 0.5, ph = fs * 1.45;               // a soft tag, so the name reads over water or sand
+            if (tags.some(q => Math.abs(q[0] - R.cx) < (q[2] + pw) / 2 && Math.abs(q[1] - y) < ph)) continue;
+            tags.push([R.cx, y, pw]);
+            ctx.fillStyle = sel ? 'rgba(10,24,40,0.7)' : 'rgba(10,24,40,0.38)';
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(R.cx - pw / 2, y - ph / 2, pw, ph, ph / 2); else ctx.rect(R.cx - pw / 2, y - ph / 2, pw, ph);
+            ctx.fill();
+            ctx.fillStyle = sel ? '#fff' : 'rgba(255,255,255,0.94)';
             ctx.fillText(name, R.cx, y, R.w * 1.5);
         }
 
