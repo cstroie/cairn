@@ -29,6 +29,7 @@ const SHELL = [
     'js/render/sky.js',
     'js/render/water.js',
     'js/render/land.js',
+    'js/render/fx.js',
     'js/render/rocks.js',
     'js/render/creatures.js',
     'js/render/ambient.js',

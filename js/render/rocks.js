@@ -98,11 +98,18 @@ export function makeRock(i, L, seed, place) {
         return { x: lerp(p[0], q[0], t), y: lerp(p[1], q[1], t), a: Math.atan2(q[1] - p[1], q[0] - p[0]) };
     };
     const top = Math.min(...pts.map(p => p[1]));
+    const foot = [];                                        // the foot, seen from above: an uneven, worn curve
+    for (let k = 1; k < 24; k++) {
+        const u = k / 24, a = Math.PI * u;
+        const x = lerp(pts[N][0], pts[0][0], u), j = (nz(u * 9, 7.3) - 0.5) * w * 0.05;
+        foot.push([x + j * 0.5, base + Math.sin(a) * w * 0.1 + j + (r() - 0.5) * w * 0.012]);
+    }
     const body = new Path2D();                              // its outline, to shade what is under water
     body.moveTo(pts[0][0], pts[0][1]);
     for (const p of pts) body.lineTo(p[0], p[1]);
-    body.bezierCurveTo(pts[N][0], base + w * 0.13, pts[0][0], base + w * 0.13, pts[0][0], pts[0][1]);
-    return { body, i, cx, w, h, base, top, pts, at, seed: seed * 31 + i * 977, tone: ledge ? 1.6 : r(), slot: w * 1.25, ledge,
+    for (const p of foot) body.lineTo(p[0], p[1]);
+    body.closePath();
+    return { body, foot, i, cx, w, h, base, top, pts, at, seed: seed * 31 + i * 977, tone: ledge ? 1.6 : r(), slot: w * 1.25, ledge,
         d: place.d, s, unit: L.unit * s };
 }
 
@@ -117,7 +124,7 @@ function drawRock(ctx, R) {
         const p = R.pts;
         ctx.moveTo(p[0][0], p[0][1]);
         smoothPath(ctx, p, false, true);
-        ctx.bezierCurveTo(p[p.length - 1][0], R.base + foot, p[0][0], R.base + foot, p[0][0], p[0][1]);
+        for (const q of R.foot) ctx.lineTo(q[0], q[1]);
         ctx.closePath();
     };
     const g = ctx.createLinearGradient(R.cx - R.w * 0.2, R.top, R.cx + R.w * 0.2, R.base + foot);
@@ -195,6 +202,21 @@ function weather(canvas, R, x0, y0, scale) {
             rr = lerp(rr, rr * 0.45, a); gg = lerp(gg, gg * 0.55 + 6, a); bb = lerp(bb, bb * 0.5, a);
         }
         px[o] = rr; px[o + 1] = gg; px[o + 2] = bb;
+    }
+    const a0 = new Uint8Array(cw * ch);                     // the edge: chipped, and darker where the stone turns away
+    for (let k = 0; k < cw * ch; k++) a0[k] = px[k * 4 + 3];
+    const R2 = Math.max(2, Math.round(scale * 2.5));
+    for (let j = R2; j < ch - R2; j++) for (let i = R2; i < cw - R2; i++) {
+        const k = j * cw + i;
+        if (!a0[k]) continue;
+        let near = R2 + 1;
+        for (let dj = -R2; dj <= R2 && near > 1; dj++) for (let di = -R2; di <= R2; di++) if (!a0[k + dj * cw + di]) near = Math.min(near, Math.max(Math.abs(di), Math.abs(dj)));
+        if (near > R2) continue;
+        const o = k * 4, f = near / (R2 + 1);
+        const chip = n(x0 / step + i * 0.35, y0 / step + j * 0.35);
+        if (near === 1 && chip > 0.62) { px[o + 3] = 0; continue; }
+        const dk = 0.72 + 0.28 * f;
+        px[o] *= dk; px[o + 1] *= dk; px[o + 2] *= dk;
     }
     ctx.putImageData(img, 0, 0);
 }
@@ -335,8 +357,20 @@ export function buildStatic(L, rocks, on, seed, scale) {
     }
     for (const R of rocks) {
         if (!on[R.i]) { if (!R.ledge) drawBuried(ctx, R); continue; }
-        ctx.fillStyle = 'rgba(14,14,26,0.3)';               // the shadow it casts on the floor
-        ctx.beginPath(); ctx.ellipse(R.cx + R.w * 0.14, R.base + R.w * 0.07, R.w * 0.62, R.w * 0.17, 0, 0, TAU); ctx.fill();
+        const g = ctx.createRadialGradient(R.cx, R.base + R.w * 0.05, 0, R.cx, R.base + R.w * 0.05, R.w * 0.62);
+        g.addColorStop(0.55, 'rgba(10,12,20,0.32)'); g.addColorStop(1, 'rgba(10,12,20,0)');     // where it meets the floor
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.ellipse(R.cx, R.base + R.w * 0.05, R.w * 0.62, R.w * 0.16, 0, 0, TAU); ctx.fill();
+        const rr = seeded(R.seed + 41);
+        for (let k = 0; k < 9; k++) {                       // rubble and grit fallen from it
+            const a = rr() * Math.PI, side = rr() < 0.5 ? -1 : 1;
+            const x = R.cx + side * R.w * (0.42 + rr() * 0.2) * Math.cos(a * 0.3), y = R.base + R.w * (0.02 + rr() * 0.12);
+            const sz = R.w * (0.012 + rr() * rr() * 0.04);
+            ctx.fillStyle = 'rgba(10,10,18,0.3)';
+            ctx.beginPath(); ctx.ellipse(x + sz * 0.3, y + sz * 0.3, sz * 1.1, sz * 0.5, 0, 0, TAU); ctx.fill();
+            ctx.fillStyle = rgb(mix([84, 80, 78], [150, 144, 136], rr()));
+            ctx.beginPath(); ctx.ellipse(x, y, sz, sz * 0.6, rr() - 0.5, 0, TAU); ctx.fill();
+        }
     }
     return canvas;
 }

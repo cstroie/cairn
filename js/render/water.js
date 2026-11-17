@@ -174,8 +174,10 @@ function drawSwash(ctx, L, env, t, col) {
     ctx.lineWidth = 1;
     ctx.beginPath(); front.forEach((p, k) => (k ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]))); ctx.stroke();
 
-    const foam = mix([150, 170, 200], [250, 252, 248], col.light);              // the lace of foam
+    const night = env.glow ? clamp(1 - col.light * 2) : 0;          // on a night the sea glows, the swash lights up blue
+    const foam = night > 0.1 ? mix(mix([150, 170, 200], [250, 252, 248], col.light), [90, 230, 255], night) : mix([150, 170, 200], [250, 252, 248], col.light);
     ctx.fillStyle = rgb(foam);
+    if (night > 0.1) ctx.globalCompositeOperation = 'lighter';
     for (let k = 0; k < front.length - 1; k++) {
         const [x, y, up, ph] = front[k], [x2, y2] = front[k + 1];
         const fresh = ph < 0.4 ? 1 : 1 - (ph - 0.4) / 0.6;
@@ -189,6 +191,7 @@ function drawSwash(ctx, L, env, t, col) {
         }
     }
     ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
 }
 
 /** Where the surface meets a rock that stands out of it: a bright ring around it. */

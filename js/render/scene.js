@@ -10,13 +10,16 @@
  * that stands out of the water; names, weather, grain.
  */
 import { clamp, lerp, mix, rgba, layer } from './util.js';
-import { skyColours, drawSky, drawWeather } from './sky.js';
+import { skyColours, drawSky, drawWeather, lamp } from './sky.js';
 import { drawSea, drawSurface, drawRing } from './water.js';
 import { places, makeRock, rockSprite, buildStatic, drawCairn } from './rocks.js';
 import { drawCreature } from './creatures.js';
 import { drawFar, drawPool, drawOver, drawBeach } from './ambient.js';
 import { seeded } from '../core/rng.js';
 import { makeLand, drawOverhang } from './land.js';
+import { drawCaustics, drawReflection, drawWet, drawSpray, drawCrab } from './fx.js';
+
+const smooth = x => { x = clamp(x); return x * x * (3 - 2 * x); };
 
 export class Scene {
     constructor(canvas) {
@@ -132,9 +135,35 @@ export class Scene {
         ctx.drawImage(this.still, 0, 0, L.W, L.H);
 
         const deepTint = [lerp(6, 14, col.light), lerp(22, 70, col.light), lerp(48, 104, col.light)];
+        const sunAt = lamp(L, env), alt = env.sun.alt, clear = 1 - env.weather.cloud * 0.75;
+        const sunK = env.sun.up ? clear * (0.35 + 0.65 * smooth(1 - alt)) : 0.12 * clear * (1 - Math.abs(env.moon - 0.5) * 2);
+        const warm = env.sun.up ? mix([255, 250, 236], [255, 160, 90], smooth(1 - alt * 1.6)) : [170, 190, 255];
+        drawCaustics(ctx, L, env, t, env.sun.up ? sunK : 0);
+        const lit = R => {                                              // the light of the moment on a rock: its sun side, its far side
+            const dx = clamp((sunAt.x - R.cx) / (L.W * 0.45), -1, 1);
+            if (sunK < 0.02) return;
+            ctx.save(); ctx.clip(R.body);
+            const x0 = R.cx + dx * R.w * 0.55, x1 = R.cx - dx * R.w * 0.55;
+            const g = ctx.createLinearGradient(x0, R.top, x1, R.base);
+            g.addColorStop(0, rgba(warm, 0.38 * sunK)); g.addColorStop(0.45, rgba(warm, 0));
+            ctx.globalCompositeOperation = 'screen'; ctx.fillStyle = g;
+            ctx.fillRect(R.cx - R.w, R.top - 4, R.w * 2, R.base - R.top + R.w * 0.2);
+            const sh = ctx.createLinearGradient(x0, 0, x1, 0);
+            sh.addColorStop(0.45, 'rgba(255,255,255,0)'); sh.addColorStop(1, rgba([40, 46, 70], 0.55 * sunK));
+            ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = sh;
+            ctx.fillRect(R.cx - R.w, R.top - 4, R.w * 2, R.base - R.top + R.w * 0.2);
+            ctx.restore();
+        };
+        if (sunK > 0.02) for (const R of this.order) {                  // shadows, long when the sun is low, away from it
+            const dx = clamp((sunAt.x - R.cx) / (L.W * 0.45), -1, 1), len = env.sun.up ? clamp(0.25 / (alt + 0.12), 0.3, 2.2) : 0.4;
+            const sx = R.cx - dx * R.w * 0.45 * len, sy = R.base + R.w * 0.06 + (1 - Math.abs(dx)) * R.w * 0.05 * len;
+            ctx.fillStyle = rgba([12, 16, 30], 0.28 * sunK);
+            ctx.beginPath(); ctx.ellipse(sx, sy, R.w * (0.5 + 0.35 * len * Math.abs(dx)), R.w * (0.12 + 0.04 * len), 0, 0, Math.PI * 2); ctx.fill();
+        }
         const one = (R, under) => {                                     // a rock, its cairn, what lives on it
             const sp = this.sprites[R.i], rock = rocks[R.i];
             ctx.drawImage(sp.canvas, sp.x, sp.y, sp.w, sp.h);
+            lit(R);
             const wl = L.waterAt(R);
             if (under && wl < R.base) {                                 // the deeper under water, the bluer and dimmer
                 const depth = clamp((R.base - wl) / (R.unit * 0.9));
@@ -164,16 +193,22 @@ export class Scene {
         };
         for (const R of this.order) one(R, true);
         drawPool(ctx, L, env, t, col, ui.about, hits);
+        env.glow = ui.about.has('glow');
         drawSurface(ctx, L, env, t, col);
+        const body = clamp(0.2 + env.level * 1.25), wind = env.weather.wind + (env.storm ? 0.5 : 0);
+        for (const R of this.order) { const wl = L.waterAt(R); if (wl < R.base) drawReflection(ctx, R, this.sprites[R.i], wl, t, wind, this.scale, body); }
         for (const R of this.order) {                                   // what stands out of the water
             const wl = L.waterAt(R);
             if (wl < R.top - R.unit * 1.2) continue;
             ctx.save();
             ctx.beginPath(); ctx.rect(R.cx - R.unit * 1.6, 0, R.unit * 3.2, wl); ctx.clip();
             one(R, false);
+            drawWet(ctx, R, wl, env, t, col);
             ctx.restore();
             drawRing(ctx, R, wl, t, col);
+            drawSpray(ctx, R, wl, env, t, col);
         }
+        drawCrab(ctx, L, env, t, col);
         drawOver(ctx, L, env, t, col, ui.about, hits);
 
         const fade = clamp(1 - (t - this.prints.at) / 60);              // where you waded out

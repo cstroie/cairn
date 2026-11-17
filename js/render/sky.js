@@ -3,6 +3,7 @@
  * the stars, the clouds, rain and fog. Drawn in view coordinates (the sky
  * does not move when the pool is panned, the clouds only a little).
  */
+import { drawMilkyWay } from './fx.js';
 import { clamp, lerp, mix, rgb, rgba, smoothstep, layer, TAU } from './util.js';
 import { seeded, hash } from '../core/rng.js';
 
@@ -119,6 +120,7 @@ export function drawSky(ctx, L, env, t, col) {
         }
         ctx.globalAlpha = 1;
     }
+    drawMilkyWay(ctx, L, env, col);
 
     const p = lamp(L, env);
     const veil = 1 - env.weather.cloud * 0.7;

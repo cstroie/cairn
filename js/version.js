@@ -8,5 +8,5 @@
  */
 (function (root) {
     'use strict';
-    root.Cairn = Object.assign(root.Cairn || {}, { VERSION: '0.4.0', BUILD: '2e1405c457a2' });
+    root.Cairn = Object.assign(root.Cairn || {}, { VERSION: '0.4.0', BUILD: '595aa79a947e' });
 })(typeof self !== 'undefined' ? self : globalThis);
