@@ -142,9 +142,6 @@ export function settings(st, hooks) {
     };
 }
 
-const EMOJI = { shorecrab: '🦀', winkle: '🐌', limpet: '🐚', blenny: '🐟', seaslug: '🐇', eggs: '🫧', storm: '⛈️', springtide: '🌊', fullmoon: '🌕',
-    lighthouse: '🗼', glow: '✨', rainbow: '🌈', shooting: '🌠', bottle: '🍾', rescue: '🛟', cleanup: '🧹' };
-
 /** The name of a page of the guide. */
 export function pageName(a) {
     if (!a.sp) return L().album[a.id][0];
@@ -161,12 +158,7 @@ function tile(c, a) {
         g.addColorStop(0, a.kind === 'ledge' ? '#2f6f8e' : '#8fd0d8'); g.addColorStop(1, a.kind === 'ledge' ? '#123a56' : '#2f8fa6');
         ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
         portrait(ctx, a.sp, a.stage == null ? 200 : a.stage * 64 + 40, w, h, 1.3);
-    } else if (!glyph(ctx, a.id, w, h, 0.4)) {
-        ctx.fillStyle = a.kind === 'under' ? '#cfe3c8' : '#f3e2b8'; ctx.fillRect(0, 0, w, h);
-        ctx.font = '36px system-ui, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(EMOJI[a.id] || '?', w / 2, h / 2 + 2);
-    }
+    } else glyph(ctx, a.id, w, h, 0.4);
 }
 
 export function guide(st) {

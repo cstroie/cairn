@@ -103,7 +103,7 @@ export function drawSurface(ctx, L, env, t, col) {
     const near = mix([10, 44, 66], [64, 170, 172], col.light);
     const g = ctx.createLinearGradient(0, y0, 0, L.shore);
     g.addColorStop(0, rgba(far, 0.66 * body));
-    g.addColorStop(0.4, rgba(mix(far, near, 0.6), 0.48 * body));
+    g.addColorStop(0.4, rgba(mix(far, near, 0.6), 0.52 * body));
     g.addColorStop(1, rgba(near, 0.32 * body));
     ctx.fillStyle = g;
     ctx.fill();

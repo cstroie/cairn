@@ -129,14 +129,35 @@ export class Scene {
         drawFar(ctx, L, env, t, col, ui.about, hits);
         ctx.drawImage(this.still, 0, 0, L.W, L.H);
 
-        const one = R => {                                              // a rock, its cairn, what lives on it
+        const deepTint = [lerp(6, 14, col.light), lerp(22, 70, col.light), lerp(48, 104, col.light)];
+        const one = (R, under) => {                                     // a rock, its cairn, what lives on it
             const sp = this.sprites[R.i], rock = rocks[R.i];
             ctx.drawImage(sp.canvas, sp.x, sp.y, sp.w, sp.h);
+            const wl = L.waterAt(R);
+            if (under && wl < R.base) {                                 // the deeper under water, the bluer and dimmer
+                const depth = clamp((R.base - wl) / (R.unit * 0.9));
+                const g = ctx.createLinearGradient(0, Math.max(wl, R.top), 0, R.base + R.w * 0.13);
+                g.addColorStop(0, rgba(deepTint, 0.12 + 0.2 * depth));
+                g.addColorStop(1, rgba(deepTint, 0.3 + 0.42 * depth));
+                ctx.save(); ctx.clip(R.body);
+                ctx.fillStyle = g; ctx.fillRect(sp.x, Math.max(wl, R.top) - 1, sp.w, sp.h);
+                if (col.light > 0.4) {                                  // and the light of the waves plays on it
+                    ctx.globalCompositeOperation = 'lighter';
+                    ctx.strokeStyle = `rgba(190,255,235,${0.1 * depth * (col.light - 0.4)})`; ctx.lineWidth = 2 * R.s;
+                    for (let k = 0; k < 4; k++) {
+                        const y = lerp(Math.max(wl, R.top), R.base, 0.12 + 0.2 * k) + Math.sin(t * 1.3 + k * 2 + R.i) * R.h * 0.04;
+                        ctx.beginPath(); ctx.moveTo(R.cx - R.w * 0.6, y);
+                        ctx.bezierCurveTo(R.cx - R.w * 0.2, y + Math.sin(t + k) * R.h * 0.1, R.cx + R.w * 0.2, y - Math.sin(t * 0.8 + k) * R.h * 0.1, R.cx + R.w * 0.6, y);
+                        ctx.stroke();
+                    }
+                }
+                ctx.restore();
+            }
             if (rock.cairn) drawCairn(ctx, R.cx + R.w * 0.5, R.base + R.w * 0.1, R.unit * 0.1, R.seed);
             drawCreature(ctx, R, rock, t, { yWater: L.waterAt(R), H: R.unit * 3.2, wind: L.wind,
                 poke: this.poke.i === R.i ? clamp(1 - (t - this.poke.at) / 2.5) : 0 });
         };
-        for (const R of this.order) one(R);
+        for (const R of this.order) one(R, true);
         drawPool(ctx, L, env, t, col, ui.about, hits);
         drawSurface(ctx, L, env, t, col);
         for (const R of this.order) {                                   // what stands out of the water
@@ -144,7 +165,7 @@ export class Scene {
             if (wl < R.top - R.unit * 1.2) continue;
             ctx.save();
             ctx.beginPath(); ctx.rect(R.cx - R.unit * 1.6, 0, R.unit * 3.2, wl); ctx.clip();
-            one(R);
+            one(R, false);
             ctx.restore();
             drawRing(ctx, R, wl, t, col);
         }
@@ -178,12 +199,17 @@ export class Scene {
                 ctx.setLineDash([]);
             }
             ctx.font = `${sel ? 700 : 600} ${fs}px ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif`;
-            const y = R.base + R.w * 0.2 + fs * 0.6;
+            const name = ui.names[R.i], tw = Math.min(ctx.measureText(name).width, R.w * 1.5) / 2 + 3;
+            // under the rock; if a nearer rock stands there, above it; if there too, only when it is chosen
+            const free = y => !this.order.some(Q => Q !== R && Q.base > R.base &&
+                R.cx + tw > Q.cx - Q.w * 0.5 && R.cx - tw < Q.cx + Q.w * 0.5 && y + fs * 0.6 > Q.top && y - fs * 0.6 < Q.base + Q.w * 0.1);
+            let y = R.base + R.w * 0.2 + fs * 0.6;
+            if (!free(y)) { const up = R.top - fs * 0.9; if (free(up) || sel) y = up; else continue; }
             ctx.lineWidth = 3; ctx.lineJoin = 'round';
             ctx.strokeStyle = sel ? 'rgba(10,24,40,0.75)' : 'rgba(10,24,40,0.45)';
-            ctx.strokeText(ui.names[R.i], R.cx, y, R.w * 1.5);
+            ctx.strokeText(name, R.cx, y, R.w * 1.5);
             ctx.fillStyle = sel ? '#fff' : 'rgba(255,255,255,0.86)';
-            ctx.fillText(ui.names[R.i], R.cx, y, R.w * 1.5);
+            ctx.fillText(name, R.cx, y, R.w * 1.5);
         }
 
         const dark = 1 - col.light;                                     // the night lies on the pool

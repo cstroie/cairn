@@ -21,7 +21,7 @@ const SHOTS = {
     ledge: { q: 'at=2026-06-15T13:00&demo=1&seed=7', w: 1280, h: 720, low: true },
     tall: { q: 'at=2026-06-21T16:00&demo=1&seed=7', w: 390, h: 844 },
     fresh: { q: 'at=2026-06-21T11:00&seed=3', w: 390, h: 844 },
-    guide: { q: 'at=2026-06-21T13:00&demo=1&seed=7', w: 520, h: 800, key: 'g' }
+    guide: { q: 'at=2026-06-21T13:00&demo=1&seed=7', w: 520, h: 1500, key: 'g', pages: true }
 };
 
 const out = process.argv[2] || '.';
@@ -48,6 +48,7 @@ for (const [name, s] of Object.entries(SHOTS)) {
     const btn = page.locator('#panel .btn').first();
     if (await btn.isVisible()) await btn.click();
     if (s.tap) await page.evaluate(() => { const R = window.lowWater.scene.rocks[4]; window.lowWater.tap = [R.cx, (R.top + R.base) / 2]; }).then(() => page.evaluate(() => window.lowWater.tap)).then(p => page.mouse.click(p[0], p[1]));
+    if (s.pages) await page.evaluate(() => { for (const a of window.lowWater.world.ALBUM) window.lowWater.state.album[a.id] = 1; });
     if (s.key) { await page.waitForTimeout(1500); await page.keyboard.press(s.key); }
     await page.waitForTimeout(900);
     await page.screenshot({ path: path.join(out, `${name}.png`) });

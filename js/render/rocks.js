@@ -54,7 +54,11 @@ export function makeRock(i, L, seed, place) {
         return { x: lerp(p[0], q[0], t), y: lerp(p[1], q[1], t), a: Math.atan2(q[1] - p[1], q[0] - p[0]) };
     };
     const top = Math.min(...pts.map(p => p[1]));
-    return { i, cx, w, h, base, top, pts, at, seed: seed * 31 + i * 977, tone: ledge ? 1.6 : r(), slot: w * 1.25, ledge,
+    const body = new Path2D();                              // its outline, to shade what is under water
+    body.moveTo(pts[0][0], pts[0][1]);
+    for (const p of pts) body.lineTo(p[0], p[1]);
+    body.bezierCurveTo(pts[N][0], base + w * 0.13, pts[0][0], base + w * 0.13, pts[0][0], pts[0][1]);
+    return { body, i, cx, w, h, base, top, pts, at, seed: seed * 31 + i * 977, tone: ledge ? 1.6 : r(), slot: w * 1.25, ledge,
         d: place.d, s, unit: L.unit * s };
 }
 
