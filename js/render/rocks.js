@@ -14,27 +14,60 @@ import { seeded } from '../core/rng.js';
 const SAND = [226, 204, 160], SAND_DEEP = [196, 170, 122];
 
 /**
- * Where the thirteen rocks stand: [{ u, d }]. Ten in staggered rows that
- * suit the shape of the window, shuffled by the seed; the three of the
- * Deep Ledge in a far row of their own.
+ * Where the thirteen rocks stand: [{ u, d }]. Ten loosely in bands of
+ * uneven size, shaken hard so no rows or columns show; of many such
+ * layouts (from the seed) the one whose two closest rocks stand furthest
+ * apart. The three of the Deep Ledge in a far row of their own.
  */
 export function places(aspect, seed) {
-    const rows = aspect < 0.8 ? [3, 2, 3, 2] : aspect < 1.5 ? [3, 4, 3] : [5, 5];
-    const r = seeded(seed * 53 + 7), out = [];
-    rows.forEach((n, k) => {
-        const d = rows.length === 2 ? [0.36, 0.9][k] : lerp(0.2, 0.93, k / (rows.length - 1));
-        const shift = rows.length === 2 && k === 1 ? 0.04 : 0;
-        for (let j = 0; j < n; j++) out.push({ u: clamp((j + 0.5) / n + shift + (r() - 0.5) * 0.24 / n, 0.08, 0.92), d: d + (r() - 0.5) * 0.07 });
-    });
-    for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [out[i], out[j]] = [out[j], out[i]]; }
-    for (let j = 0; j < 3; j++) out.push({ u: 0.26 + j * 0.24 + (r() - 0.5) * 0.05, d: 0.03 + r() * 0.03 });
-    return { list: out, cols: Math.max(...rows), rows: rows.length };
+    const SPLITS = aspect < 0.8 ? [[3, 2, 3, 2], [2, 3, 2, 3], [3, 3, 2, 2], [2, 3, 3, 2], [2, 2, 3, 3]]
+        : aspect < 1.5 ? [[3, 4, 3], [4, 3, 3], [3, 3, 4], [2, 4, 4], [4, 4, 2], [3, 5, 2]]
+            : [[5, 5], [4, 6], [6, 4]];
+    const r = seeded(seed * 53 + 7);
+    const nr = SPLITS[0].length, cols = Math.max(...SPLITS[0]);
+    const far = nr === 2 ? 0.3 : 0.17, near = 0.95, gap = (near - far) / Math.max(1, nr - 1);
+    const dist = (a, b) => Math.hypot((a.u - b.u) * cols, (a.d - b.d) / gap * 0.8);
+    let best = null, score = -1;
+    for (let tryk = 0; tryk < 60; tryk++) {
+        const split = SPLITS[Math.floor(r() * SPLITS.length)], out = [];
+        split.forEach((n, k) => {
+            const w = Array.from({ length: n }, () => 0.6 + r());             // uneven spacing along the band
+            const sum = w.reduce((a, b) => a + b);
+            let acc = 0;
+            for (let j = 0; j < n; j++) {
+                const u = 0.06 + 0.88 * (acc + w[j] / 2) / sum; acc += w[j];
+                out.push({ u: clamp(u + (r() - 0.5) * 0.5 / n, 0.06, 0.94), d: clamp(far + k * gap + (r() - 0.5) * gap * 0.75, far * 0.85, near) });
+            }
+        });
+        const pairs = new Set();                            // one or two lean on a neighbour, touching
+        for (let p = 0, np = 1 + (r() < 0.5); p < np; p++) {
+            const a = Math.floor(r() * 10);
+            let b = -1, bd = Infinity;
+            out.forEach((o, k) => { if (k !== a && !pairs.has(k) && dist(o, out[a]) < bd) { bd = dist(o, out[a]); b = k; } });
+            if (b < 0 || pairs.has(a)) continue;
+            const side = out[a].u < out[b].u ? -1 : 1;
+            out[a].u = clamp(out[b].u + side * (0.5 + r() * 0.12) / cols, 0.08, 0.92);
+            out[a].d = clamp(out[b].d + (r() - 0.5) * gap * 0.25, far * 0.85, near);
+            out[a].big = 0.65 + r() * 0.2;                  // the one leaning is the smaller
+            pairs.add(a); pairs.add(b);
+        }
+        let m = Infinity;
+        for (let i = 0; i < 10; i++) for (let j = i + 1; j < 10; j++) if (!(pairs.has(i) && pairs.has(j))) m = Math.min(m, dist(out[i], out[j]));
+        if (m > score) { score = m; best = out; }
+    }
+    for (const o of best) if (o.big == null) {              // tall stacks, ordinary rocks, small low ones
+        const x = r();
+        o.big = x < 0.2 ? 1.3 + r() * 0.3 : x < 0.45 ? 0.62 + r() * 0.15 : 0.85 + r() * 0.25;
+    }
+    for (let i = best.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [best[i], best[j]] = [best[j], best[i]]; }
+    for (let j = 0; j < 3; j++) best.push({ u: 0.18 + j * 0.3 + (r() - 0.5) * 0.14, d: 0.02 + r() * 0.05 });
+    return { list: best, cols, rows: nr };
 }
 
 /** The shape of rock i at its place: outline points, and a function along its top. */
 export function makeRock(i, L, seed, place) {
     const r = seeded(seed * 7919 + i * 104729 + 13);
-    const ledge = i >= 10, s = L.sc(place.d);
+    const ledge = !place.decor && i >= 10, s = L.sc(place.d), big = ledge ? 1 : place.big || 1;
     const cx = L.px(place.u, place.d), base = L.floorY(place.d);
     // a kind of rock: [width, height, roundness of the shoulders, lean, lumpiness]
     const KINDS = [[0.95, 0.62, 0.8, 0.5, 0.3],    // a boulder
@@ -43,8 +76,8 @@ export function makeRock(i, L, seed, place) {
         [1.02, 0.6, 0.5, 1.5, 0.3],                // a tilted block
         [1.08, 0.6, 0.7, 0.4, 0.75]];              // split in two
     const kind = KINDS[Math.floor(r() * KINDS.length)];
-    const w = L.unit * kind[0] * (0.82 + r() * 0.36) * s;
-    const h = ledge ? L.unit * 0.085 * s * (0.9 + r() * 0.2) : L.unit * kind[1] * (0.8 + r() * 0.4) * s;
+    const w = L.unit * kind[0] * (0.82 + r() * 0.36) * s * Math.pow(big, 0.55);
+    const h = ledge ? L.unit * 0.085 * s * (0.9 + r() * 0.2) : L.unit * kind[1] * (0.8 + r() * 0.4) * s * big;
     const skew = (r() - 0.5) * kind[3], round = kind[2] * (0.8 + r() * 0.4);
     const ctl = Array.from({ length: 7 }, () => 1 - kind[4] * 0.5 + r() * kind[4]);   // lumps along the top
     if (kind[4] > 0.5) ctl[2 + Math.floor(r() * 3)] *= 0.45;                          // the cleft
@@ -215,6 +248,22 @@ export function buildStatic(L, rocks, on, seed, scale) {
         const d = r(), y = L.floorY(d), s = L.sc(d);
         ctx.fillStyle = r() < 0.5 ? `rgba(60,96,56,${0.08 + r() * 0.12})` : `rgba(236,220,180,${0.05 + r() * 0.1})`;
         ctx.beginPath(); ctx.ellipse(r() * W, y, (14 + r() * 50) * s, (4 + r() * 10) * s, 0, 0, TAU); ctx.fill();
+    }
+
+    const decor = [];                                       // loose boulders: part of the shore, not of the game
+    for (let k = 0, n = 7 + Math.floor(r() * 6); k < 60 && decor.length < n; k++) {
+        const place = { u: 0.03 + r() * 0.94, d: 0.08 + r() * 0.9, big: 0.22 + r() * 0.28, decor: true };
+        const x = L.px(place.u, place.d), y = L.floorY(place.d);
+        if (rocks.some(R => !R.ledge && Math.abs(R.cx - x) < R.w * 0.75 && Math.abs(R.base - y) < R.w * 0.35)) continue;
+        if (decor.some(D => Math.abs(D.cx - x) < D.w && Math.abs(D.base - y) < D.w * 0.3)) continue;
+        decor.push(makeRock(100 + k, L, seed, place));
+    }
+    decor.sort((a, b) => a.base - b.base);
+    for (const D of decor) {
+        ctx.fillStyle = 'rgba(14,14,26,0.25)';
+        ctx.beginPath(); ctx.ellipse(D.cx + D.w * 0.12, D.base + D.w * 0.06, D.w * 0.6, D.w * 0.15, 0, 0, TAU); ctx.fill();
+        const sp = rockSprite(D, scale);
+        ctx.drawImage(sp.canvas, sp.x, sp.y, sp.w, sp.h);
     }
 
     const rim = (y0, amp, tones) => {                       // the rim of rock behind the pool
