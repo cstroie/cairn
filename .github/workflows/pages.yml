@@ -1,6 +1,6 @@
 name: pages
 # Publishes the app (not the tools or the tests) to the gh-pages branch,
-# which GitHub Pages serves at https://cstroie.github.io/low-water/
+# which GitHub Pages serves at https://cstroie.github.io/cairn/
 on:
   push:
     branches: [main]

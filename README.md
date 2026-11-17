@@ -1,8 +1,9 @@
 # Cairn
 
-**Play: https://cstroie.github.io/low-water/**
+**Play: https://cstroie.github.io/cairn/**
 
-A very slow tide pool you can't control. Ten rocks, a tide every 12 hours 25 minutes on the real
+A very slow tide pool you can't control, named for the one thing you can do: build a cairn, a
+little stack of stones, beside a rock so that nobody steps on it. Ten rocks, a tide every 12 hours 25 minutes on the real
 clock, and one decision: what not to disturb. An installable web app (PWA) that works offline and
 updates itself; the graphics and the sounds are made in code, there are no image or sound files.
 
@@ -17,3 +18,5 @@ Player's guide: [docs/PLAYING.md](docs/PLAYING.md). Design notes: [docs/DESIGN.m
     node tools/stamp.js     after any change to the app: the build stamp in js/version.js
 
 No framework, no build step, no dependencies. English and Romanian. MIT licence.
+
+It was called Low Water until November 2026; a pool saved under that name carries on.

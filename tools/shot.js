@@ -47,8 +47,8 @@ for (const [name, s] of Object.entries(SHOTS)) {
     await page.waitForTimeout(700);
     const btn = page.locator('#panel .btn').first();
     if (await btn.isVisible()) await btn.click();
-    if (s.tap) await page.evaluate(() => { const R = window.lowWater.scene.rocks[4]; window.lowWater.tap = [R.cx, (R.top + R.base) / 2]; }).then(() => page.evaluate(() => window.lowWater.tap)).then(p => page.mouse.click(p[0], p[1]));
-    if (s.pages) await page.evaluate(() => { for (const a of window.lowWater.world.ALBUM) window.lowWater.state.album[a.id] = 1; });
+    if (s.tap) await page.evaluate(() => { const R = window.cairn.scene.rocks[4]; window.cairn.tap = [R.cx, (R.top + R.base) / 2]; }).then(() => page.evaluate(() => window.cairn.tap)).then(p => page.mouse.click(p[0], p[1]));
+    if (s.pages) await page.evaluate(() => { for (const a of window.cairn.world.ALBUM) window.cairn.state.album[a.id] = 1; });
     if (s.key) { await page.waitForTimeout(1500); await page.keyboard.press(s.key); }
     await page.waitForTimeout(900);
     await page.screenshot({ path: path.join(out, `${name}.png`) });

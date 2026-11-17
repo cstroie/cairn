@@ -303,7 +303,7 @@ function alertPrefs() {
     caches.open('lw-prefs').then(c => c.put('alert', new Response(body))).catch(() => {});
     const reg = pwa.registration_();
     if (reg && reg.periodicSync) {
-        (st.settings.alert ? reg.periodicSync.register('low-water', { minInterval: 3 * 3600000 }) : reg.periodicSync.unregister('low-water')).catch(() => {});
+        (reg.periodicSync.unregister('low-water').catch(() => {}), st.settings.alert ? reg.periodicSync.register('cairn', { minInterval: 3 * 3600000 }) : reg.periodicSync.unregister('cairn')).catch(() => {});
     }
 }
 
@@ -335,4 +335,4 @@ setInterval(tick, 1000);
 requestAnimationFrame(frame);
 pwa.init({ beforeReload: persist, toast: s => hud.toast(s), banner: (s, b) => hud.banner(s, b) });
 if (st.settings.alert) setTimeout(alertPrefs, 3000);
-window.lowWater = { get state() { return st; }, scene, world };
+window.cairn = { get state() { return st; }, scene, world };

@@ -12,7 +12,7 @@
 import { t } from './i18n.js';
 
 const HOUR = 3600000;
-const info = () => window.LowWater || { VERSION: '?', BUILD: '?' };
+const info = () => window.Cairn || { VERSION: '?', BUILD: '?' };
 export const versionLabel = () => `${info().VERSION} (${info().BUILD})`;
 
 let registration = null, deferredPrompt = null, reloading = false, hooks = {};

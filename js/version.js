@@ -8,5 +8,5 @@
  */
 (function (root) {
     'use strict';
-    root.LowWater = Object.assign(root.LowWater || {}, { VERSION: '0.3.1', BUILD: '8e4e19078257' });
+    root.Cairn = Object.assign(root.Cairn || {}, { VERSION: '0.3.1', BUILD: 'ec3c024fcc9e' });
 })(typeof self !== 'undefined' ? self : globalThis);

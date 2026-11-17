@@ -7,7 +7,7 @@
  *
  * The stamp is the first 12 hex digits of a SHA-256 over every file the
  * service worker caches (the SHELL list in sw.js), with the stamp itself
- * set to zeros. The cache is named lowwater-{VERSION}-{BUILD}, so any
+ * set to zeros. The cache is named cairn-{VERSION}-{BUILD}, so any
  * change to the app is a new cache and a new service worker. Run it
  * after any change to a file of the app; a test fails when it is stale.
  *

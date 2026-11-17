@@ -172,6 +172,8 @@ test('the save goes round, and rubbish is refused', () => {
     assert.equal(old.v, 3);
     assert.equal(new Set(old.rocks.slice(0, 10).map(r => r.nick)).size, 10);
     assert.equal(migrate('x'), null);
-    mem.set('lowwater.save', '{oops');
+    const prev = new Map([['lowwater.save', JSON.stringify(st)]]);   // a save from when the game was called Low Water
+    assert.deepEqual(load({ getItem: k => prev.get(k) ?? null }), st);
+    mem.set('cairn.save', '{oops');
     assert.equal(load(store), null);
 });

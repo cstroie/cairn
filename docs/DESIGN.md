@@ -86,7 +86,7 @@ Ambient things have no state: where a fish is comes from the time. Each adds its
 
 ## Self-update
 
-As DigitalRerun: every file in `SHELL` (`sw.js`) is cached under `lowwater-{VERSION}-{BUILD}`;
+As DigitalRerun: every file in `SHELL` (`sw.js`) is cached under `cairn-{VERSION}-{BUILD}`;
 `BUILD` is a hash of those files written by `tools/stamp.js`, and a test fails when it is stale
 or when a file of the app is missing from the list. A new worker waits; because the pool is saved
 on every change it takes over at once when the app starts or is out of sight, and otherwise

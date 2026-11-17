@@ -2,20 +2,20 @@
  * Service worker: keeps the app for offline use.
  *
  * Every file of the app is cached under the version's own name
- * (lowwater-{VERSION}-{BUILD}) and served from there, so a page always
+ * (cairn-{VERSION}-{BUILD}) and served from there, so a page always
  * runs one consistent version. A new version installs beside the old one
  * and waits; the page tells it when to take over ('skip-waiting'): at
  * once when nobody is looking, or at the next start. The old cache is
  * removed when the new worker takes over.
  */
 importScripts('js/version.js');
-const { VERSION, BUILD } = self.LowWater;
-const CACHE = `lowwater-${VERSION}-${BUILD}`;
+const { VERSION, BUILD } = self.Cairn;
+const CACHE = `cairn-${VERSION}-${BUILD}`;
 const SHELL = [
     './',
     'index.html',
     'manifest.webmanifest',
-    'css/low-water.css',
+    'css/cairn.css',
     'js/version.js',
     'js/main.js',
     'js/pwa.js',
@@ -55,7 +55,7 @@ self.addEventListener('activate', event => {
     event.waitUntil(
         caches.keys()
             // Only our own caches: the origin may be shared with other apps.
-            .then(keys => Promise.all(keys.filter(k => k.startsWith('lowwater-') && k !== CACHE).map(k => caches.delete(k))))
+            .then(keys => Promise.all(keys.filter(k => (k.startsWith('cairn-') || k.startsWith('lowwater-')) && k !== CACHE).map(k => caches.delete(k))))
             .then(() => self.clients.claim())
     );
 });
@@ -83,7 +83,7 @@ self.addEventListener('fetch', event => {
  * to say it, in the cache 'lw-prefs' (the worker cannot read the save).
  */
 self.addEventListener('periodicsync', event => {
-    if (event.tag !== 'low-water') return;
+    if (event.tag !== 'cairn') return;
     event.waitUntil((async () => {
         const res = await (await caches.open('lw-prefs')).match('alert');
         const prefs = res ? await res.json() : null;
@@ -92,7 +92,7 @@ self.addEventListener('periodicsync', event => {
         const M = (Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), d.getMinutes()) - Date.UTC(1977, 11, 31)) / 60000;
         const phase = M % 745;
         if (phase < 312 || phase > 392 || d.getHours() < 8 || d.getHours() > 20) return;
-        await self.registration.showNotification(prefs.title, { body: prefs.body, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', tag: 'low-water' });
+        await self.registration.showNotification(prefs.title, { body: prefs.body, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', tag: 'cairn' });
     })());
 });
 

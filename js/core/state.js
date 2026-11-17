@@ -8,7 +8,8 @@ import { simTide, catchUp, trample } from './sim.js';
 import { tideOf } from './tide.js';
 import { hash } from './rng.js';
 
-export const KEY = 'lowwater.save';
+export const KEY = 'cairn.save';
+const OLD_KEY = 'lowwater.save';                  // the save of the game when it was called Low Water
 export const VERSION = 3;
 export const NICKS = 30, LEDGE_NICKS = 6;   // how many shore names a language has to offer
 export const ROCKS = 13;             // ten, and three on the Deep Ledge
@@ -60,7 +61,7 @@ export function migrate(st) {
 }
 
 export function load(store) {
-    try { return migrate(JSON.parse(store.getItem(KEY))); } catch (e) { return null; }
+    try { return migrate(JSON.parse(store.getItem(KEY) ?? store.getItem(OLD_KEY))); } catch (e) { return null; }
 }
 
 export function save(store, st) {
