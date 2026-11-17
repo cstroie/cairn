@@ -77,8 +77,26 @@ export async function install() {
     } else hooks.toast(isIos() ? t('installHint') : t('installMenu'));
 }
 
+/**
+ * Suggest installing, once the pool has been looked at for a while: an
+ * installed app opens offline and keeps its own window. Asked again at
+ * most every two weeks after "Later"; never once installed.
+ */
+const ASKED = 'cairn.installAsked', AGAIN = 14 * 24 * HOUR;
+function suggestInstall() {
+    let last = 0;
+    try { last = Number(localStorage.getItem(ASKED)) || 0; } catch (e) { /* no storage: ask anyway */ }
+    if (!canInstall() || Date.now() - last < AGAIN || /[?&](at|demo|rate)=/.test(location.search)) return;
+    const asked = () => { try { localStorage.setItem(ASKED, String(Date.now())); } catch (e) { /* fine */ } };
+    hooks.banner(t('installOffer'), [
+        { label: t('install'), primary: true, action: () => { asked(); install(); } },
+        { label: t('later'), action: asked }
+    ]);
+}
+
 export function init(h) {
     hooks = h;
+    setTimeout(suggestInstall, 40000);
     addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; });
     addEventListener('appinstalled', () => { deferredPrompt = null; });
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {

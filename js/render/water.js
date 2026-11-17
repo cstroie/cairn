@@ -5,12 +5,13 @@
 import { clamp, lerp, mix, rgb, rgba, smoothstep, TAU } from './util.js';
 import { hash } from '../core/rng.js';
 import { lamp } from './sky.js';
+import { drawLand, seaTint } from './land.js';
 
 /** The far sea, the headland and its lighthouse. */
 export function drawSea(ctx, L, env, t, col) {
     const { W, H, horizon } = L;
     const bottom = L.ridge + H * 0.08;
-    const deep = mix([10, 26, 58], [38, 112, 150], col.light);
+    const deep = seaTint(L.land, col, 0.6) || mix([10, 26, 58], [38, 112, 150], col.light);
     const far = mix(col.bot, deep, 0.45);
     const g = ctx.createLinearGradient(0, horizon, 0, bottom);
     g.addColorStop(0, rgb(far));
@@ -18,48 +19,7 @@ export function drawSea(ctx, L, env, t, col) {
     ctx.fillStyle = g;
     ctx.fillRect(0, horizon, W, bottom - horizon);
 
-    const ld = L.land || { side: -1, x: 0.08, w: 0.3, hgt: 1, peak: 0.45, isle: null };
-    const hx0 = W * ld.x - L.pan * 0.05, hw = Math.max(W * ld.w, H * 0.3), hh = H * 0.05 * ld.hgt;
-    const hx = ld.side < 0 ? hx0 : W - hx0;
-    const land = mix([10, 14, 30], [70, 92, 104], col.light);
-    const haze = rgb(mix(land, col.bot, 0.55));
-    if (ld.isle) {                                          // an island far out, paler in the haze
-        const ix = W * (ld.side < 0 ? ld.isle.x : 1 - ld.isle.x), iw = W * ld.isle.w, ih = H * 0.05 * ld.isle.hgt;
-        ctx.fillStyle = haze;
-        ctx.beginPath(); ctx.moveTo(ix - iw, horizon + 1);
-        ctx.bezierCurveTo(ix - iw * 0.6, horizon - ih * 0.7, ix - iw * 0.1, horizon - ih, ix + iw * 0.2, horizon - ih * 0.85);
-        ctx.bezierCurveTo(ix + iw * 0.5, horizon - ih * 0.6, ix + iw * 0.8, horizon - ih * 0.2, ix + iw, horizon + 1);
-        ctx.closePath(); ctx.fill();
-    }
-    ctx.fillStyle = rgb(mix(land, col.bot, 0.35));          // the headland: a long slope inland, a cliff to the sea
-    const hs = ld.side, c = -0.15 + 0.3 * ld.peak;          // v: across the headland, positive towards the open sea
-    const prof = v => {
-        const d = (v - c) / (v < c ? 0.75 : 0.2);
-        return Math.max(0, 1 - d * d) * (1 + 0.06 * Math.sin(v * 23 + ld.peak * 9) + 0.04 * Math.sin(v * 51));
-    };
-    ctx.beginPath();
-    ctx.moveTo(hx - hs * 1.2 * hw, horizon + 1);
-    for (let k = 0; k <= 60; k++) { const v = -1.2 + k / 60 * 1.7; ctx.lineTo(hx - hs * v * hw, horizon + 1 - hh * prof(v)); }
-    ctx.closePath(); ctx.fill();
-    const lv = c - 0.08, lx = hx - hs * lv * hw, ly = horizon + 3 - hh * prof(lv), lh = H * 0.05;
-    ctx.fillStyle = rgb(mix([40, 44, 60], [238, 236, 228], col.light));
-    ctx.beginPath();                                        // the lighthouse
-    ctx.moveTo(lx - lh * 0.11, ly); ctx.lineTo(lx - lh * 0.07, ly - lh); ctx.lineTo(lx + lh * 0.07, ly - lh); ctx.lineTo(lx + lh * 0.11, ly);
-    ctx.closePath(); ctx.fill();
-    ctx.fillStyle = rgb(mix([30, 20, 26], [180, 60, 50], col.light));
-    ctx.fillRect(lx - lh * 0.085, ly - lh * 0.62, lh * 0.17, lh * 0.18);
-    ctx.fillRect(lx - lh * 0.1, ly - lh * 1.16, lh * 0.2, lh * 0.16);
-    if (col.light < 0.6) {                                  // its light, turning
-        const turn = (t % 6) / 6;
-        const flash = Math.pow(Math.max(0, Math.cos(turn * TAU)), 24);
-        const a = (0.25 + 0.75 * flash) * (1 - col.light / 0.6);
-        const r = lh * (0.5 + 3.5 * flash);
-        const gl = ctx.createRadialGradient(lx, ly - lh * 1.08, 0, lx, ly - lh * 1.08, r);
-        gl.addColorStop(0, `rgba(255,244,190,${a})`);
-        gl.addColorStop(1, 'rgba(255,244,190,0)');
-        ctx.fillStyle = gl;
-        ctx.fillRect(lx - r, ly - lh * 1.08 - r, r * 2, r * 2);
-    }
+    drawLand(ctx, L, env, t, col);
 
     const band = bottom - horizon;                          // the swell
     ctx.lineWidth = 1;
@@ -115,7 +75,7 @@ export function drawSurface(ctx, L, env, t, col) {
     ctx.closePath();
     const sky = mix(col.bot, [255, 255, 255], 0.1);
     const far = mix(mix([14, 40, 70], [60, 150, 176], col.light), sky, 0.35);
-    const near = mix([10, 44, 66], [64, 170, 172], col.light);
+    const near = seaTint(L.land, col, 1) || mix([10, 44, 66], [64, 170, 172], col.light);
     const g = ctx.createLinearGradient(0, y0, 0, L.shore);
     g.addColorStop(0, rgba(far, 0.55 * body));
     g.addColorStop(0.4, rgba(mix(far, near, 0.6), 0.4 * body));

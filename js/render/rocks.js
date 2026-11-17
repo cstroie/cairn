@@ -10,8 +10,10 @@
  */
 import { clamp, lerp, mix, rgb, rgba, layer, smoothPath, noise2, TAU } from './util.js';
 import { seeded } from '../core/rng.js';
+import { drawStones } from './land.js';
 
-const SAND = [226, 204, 160], SAND_DEEP = [196, 170, 122];
+const SAND0 = [226, 204, 160], SAND_DEEP0 = [196, 170, 122];
+let SAND = SAND0, SAND_DEEP = SAND_DEEP0;
 
 /**
  * Where the thirteen rocks stand: [{ u, d }]. Ten loosely in bands of
@@ -223,6 +225,7 @@ function drawBuried(ctx, R) {
 /** Draw the rim, the floor of the pool, the near sand, the shadows and the buried rocks into a layer. */
 export function buildStatic(L, rocks, on, seed, scale) {
     scale = scale || 1;
+    [SAND, SAND_DEEP] = L.land ? L.land.sand : [SAND0, SAND_DEEP0];
     const { W, H } = L;
     const { canvas, ctx } = layer(W, H, scale);
     const r = seeded(seed * 13 + 3);
@@ -285,9 +288,9 @@ export function buildStatic(L, rocks, on, seed, scale) {
         ctx.closePath(); ctx.fill();
         return pts;
     };
-    const ra = (L.land ? L.land.rim : 1);
-    rim(L.ridge, H * 0.012 * ra, [[122, 112, 104], [70, 66, 70]]);
-    const near = rim(L.ridge + (L.yFar - L.ridge) * 0.45, H * 0.014 * ra, [[100, 92, 86], [44, 46, 58]]);
+    const ra = (L.land ? L.land.rimRough : 1), RT = L.land ? L.land.rim : [[122, 112, 104], [70, 66, 70], [100, 92, 86], [44, 46, 58]];
+    rim(L.ridge, H * 0.012 * ra, [RT[0], RT[1]]);
+    const near = rim(L.ridge + (L.yFar - L.ridge) * 0.45, H * 0.014 * ra, [RT[2], RT[3]]);
     ctx.strokeStyle = 'rgba(255,246,230,0.14)'; ctx.lineWidth = 2;
     ctx.beginPath(); smoothPath(ctx, near.map(p => [p[0], p[1] + 2])); ctx.stroke();
     for (let k = 0; k < W / 12; k++) {                      // barnacle dust and cracks on it
@@ -324,6 +327,7 @@ export function buildStatic(L, rocks, on, seed, scale) {
         }
         ctx.putImageData(img, 0, y0);
     }
+    drawStones(ctx, L, r);
     for (let k = 0; k < W / 12; k++) {                      // a few pebbles and bits of shell
         const x = r() * W, y = lerp(L.yNear + H * 0.008, H, r());
         ctx.fillStyle = r() < 0.5 ? `rgba(255,248,225,${r() * 0.3})` : `rgba(110,84,50,${r() * 0.2})`;

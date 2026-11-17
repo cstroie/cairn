@@ -167,6 +167,7 @@ export default {
     updateReady: 'O versiune nouă de Cairn este gata.', updateNow: 'Actualizează', later: 'Mai târziu',
     upToDate: 'Aceasta este cea mai nouă versiune.', offlineReady: 'Cairn poate merge acum și fără internet.',
     updateFail: 'Nu am putut căuta: fără internet?', installHint: 'Atinge Partajare, apoi Adaugă pe ecranul principal.',
+    installOffer: 'Instalează Cairn: se deschide și fără internet, cu mareea în fereastra ei.',
     installMenu: 'Folosește meniul browserului, Instalare.',
     minutes: k => `${k} min`,
     hours: k => `${k} h`,

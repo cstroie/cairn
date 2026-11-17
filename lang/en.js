@@ -166,6 +166,7 @@ export default {
     updateReady: 'A new version of Cairn is ready.', updateNow: 'Load it', later: 'Later',
     upToDate: 'This is the latest version.', offlineReady: 'Cairn is ready to work offline.',
     updateFail: 'Could not look: offline?', installHint: 'Tap Share, then Add to Home Screen.',
+    installOffer: 'Install Cairn: it opens without internet and keeps the tide in its own window.',
     installMenu: 'Use the browser menu, Install.',
     minutes: k => `${k} min`,
     hours: k => `${k} h`,
