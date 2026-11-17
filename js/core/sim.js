@@ -169,8 +169,8 @@ export function catchUp(st, now) {
 
 /**
  * You leave across the rocks nobody fenced: what grows there is set back
- * a quarter and a little more, the visitors are scared off, and the quiet
- * starts again. Returns the rocks that were stepped on.
+ * a quarter and a little more, the quick visitors are scared off (a sea
+ * star or an urchin only clamps down and stays), and the quiet starts again. Returns the rocks that were stepped on.
  */
 export function trample(st) {
     const stepped = [];
@@ -180,6 +180,7 @@ export function trample(st) {
         r.calm = 0;
         if (r.sp === SP.BARE) continue;
         stepped.push(i);
+        if (r.sp === SP.STAR || r.sp === SP.URCH) continue;      // too slow to flee: it holds on
         if (isVisitor(r.sp)) { becomes(r, SP.BARE, 0); continue; }
         const left = r.g - ((r.g >> 2) + 10);
         if (left >= 12) { r.g = left; continue; }

@@ -10,8 +10,8 @@ export default {
     intro: [
         'Ten rocks and a tide. Things grow when the water is in. You decide only what not to disturb.',
         'The pool keeps the real time. Come back tomorrow, or in a week: the tides will have gone on without you, and something will have settled, grown, been eaten or torn away.',
-        'You have five cairn stones. A rock with a cairn is left alone. When you go, you wade out across the rocks that have none, and what lives there is stepped on and starts a little smaller.',
-        'The rare things, anemones and sea stars, only come to rocks that stay quiet for days. There is nothing to win. Choose, then go away for a while.'
+        'You have three cairn stones, and the sea brings more. A rock with a cairn is left alone. When you go, you wade out across the rocks that have none, and what lives there is stepped on and starts a little smaller.',
+        'The rare things, anemones and sea stars, only come to rocks that stay quiet for days: a cairn is how you give them that. There is nothing to win. Choose, then go away for a while.'
     ],
     begin: 'Go to the pool',
     close: 'Close',

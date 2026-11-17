@@ -38,12 +38,12 @@ test('pages uncover rocks in order, then stones, then the ledge', () => {
         const res = W.unlock(st);
         on += res.rocks.length;
         assert.equal(st.rocks.slice(0, 10).filter(r => r.on).length, 4 + W.ROCK_AT.filter(k => n >= k).length);
-        assert.equal(st.stones, 2 + W.STONE_AT.filter(k => n >= k).length);
+        assert.equal(st.stones, 3 + W.STONE_AT.filter(k => n >= k).length);
         assert.equal(st.ledge, n >= W.LEDGE_AT);
         assert.equal(st.rocks.slice(10).every(r => r.on), n >= W.LEDGE_AT);
     }
     assert.equal(on, 10);
-    assert.equal(st.stones, 5);
+    assert.equal(st.stones, 6);
     assert.equal(W.nextUnlock(st), null);
     assert.equal(st.journal.filter(e => e.ev === EV.UNCOVER).length, 7);
     const fresh = newPool(5, M0); fresh.album = {};

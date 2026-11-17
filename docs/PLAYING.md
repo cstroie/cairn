@@ -40,13 +40,13 @@ tiny, young, grown, full grown.
 
 ## What you decide
 
-You start with four rocks and two cairn stones; the rest come as you fill the field guide (below),
+You start with four rocks and three cairn stones; the rest come as you fill the field guide (below),
 up to ten rocks and five stones. Tap a rock, then **Place a cairn** (or lift it). A rock with a cairn
 is left alone.
 
 When you leave, you wade out across the rocks that have no cairn: what lives there is stepped on,
-set back a quarter and a little more, and its quiet starts again from nothing; visitors are scared
-off. You have left when the app has been out of sight for more than ten minutes; a glance at
+set back a quarter and a little more, and its quiet starts again from nothing; the quick visitors are scared
+off, though a sea star or an urchin only clamps down and stays. You have left when the app has been out of sight for more than ten minutes; a glance at
 another app costs nothing.
 
 The rare things (anemones, sea stars) need quiet: days of it. Visit often and walk the same rocks

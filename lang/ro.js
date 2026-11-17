@@ -11,7 +11,7 @@ export default {
     intro: [
         'Zece stânci și o maree. Viața crește când vine apa. Tu hotărăști doar ce să nu tulburi.',
         'Balta ține timpul adevărat. Întoarce-te mâine sau peste o săptămână: mareele își vor fi văzut de drum fără tine, iar ceva se va fi prins, va fi crescut, va fi fost mâncat sau smuls.',
-        'Ai cinci pietre de moviliță. O stâncă cu moviliță este lăsată în pace. Când pleci, treci prin apă peste stâncile fără moviliță, iar ce trăiește acolo este călcat și o ia de la capăt, mai mic.',
+        'Ai trei pietre de moviliță, iar marea îți mai aduce. O stâncă cu moviliță este lăsată în pace. Când pleci, treci prin apă peste stâncile fără moviliță, iar ce trăiește acolo este călcat și o ia de la capăt, mai mic.',
         'Viețuitoarele rare, anemonele și stelele de mare, vin doar pe stâncile liniștite zile întregi. Nu ai nimic de câștigat. Alege, apoi pleacă o vreme.'
     ],
     begin: 'Spre baltă',

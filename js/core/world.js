@@ -7,7 +7,7 @@
  */
 import { rnd, hash } from './rng.js';
 import { SP, EV, LEDGE, log, stage, grows } from './sim.js';
-import { ORDER } from './state.js';
+import { ORDER, START_STONES } from './state.js';
 import { dayOf } from './tide.js';
 
 /* ---------- the field guide ---------- */
@@ -53,7 +53,7 @@ export function unlock(st) {
         res.rocks.push(i);
         log(st, st.last, EV.UNCOVER, i, 0);
     }
-    const stones = 2 + STONE_AT.filter(k => n >= k).length;
+    const stones = START_STONES + STONE_AT.filter(k => n >= k).length;
     if (stones > st.stones) { res.stones = stones - st.stones; st.stones = stones; }
     if (n >= LEDGE_AT && !st.ledge) {
         st.ledge = true; res.ledge = true;

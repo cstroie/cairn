@@ -13,7 +13,7 @@ export const VERSION = 3;
 export const NICKS = 30, LEDGE_NICKS = 6;   // how many shore names a language has to offer
 export const ROCKS = 13;             // ten, and three on the Deep Ledge
 export const ORDER = [4, 5, 3, 6, 2, 7, 1, 8, 0, 9];     // the order the sand uncovers them
-export const START_ROCKS = 4, START_STONES = 2;
+export const START_ROCKS = 4, START_STONES = 3;
 export const VISIT_GAP = 10;        // minutes hidden after which you have left
 const PRE_AGE = 36;                 // tides a new pool has already seen
 

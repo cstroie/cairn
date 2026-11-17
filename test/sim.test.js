@@ -29,7 +29,7 @@ test('a new pool is alive, with an empty journal', () => {
     assert.notDeepEqual(st.rocks.map(r => r.nick), newPool(8, M0).rocks.map(r => r.nick));
     assert.equal(st.rocks.length, 13);
     assert.deepEqual(st.rocks.map((r, i) => (r.on ? i : -1)).filter(i => i >= 0), [3, 4, 5, 6]);
-    assert.equal(st.stones, 2);
+    assert.equal(st.stones, 3);
     assert.ok(st.rocks.some(r => r.on && r.sp !== SP.BARE));
     assert.ok(st.rocks.every(r => r.on || r.sp === SP.BARE));
     assert.equal(st.journal.length, 0);
@@ -100,8 +100,10 @@ test('walking out: a quarter and ten, visitors go, cairns are spared', () => {
     Object.assign(st.rocks[2], { sp: SP.CRAB, g: 100, calm: 9 });
     Object.assign(st.rocks[3], { sp: SP.KELP, g: 25, calm: 9 });
     Object.assign(st.rocks[4], { sp: SP.FILM, g: 20, calm: 9 });
+    Object.assign(st.rocks[5], { sp: SP.STAR, g: 150, calm: 9 });
     const stepped = trample(st);
-    assert.deepEqual(stepped, [0, 2, 3, 4]);
+    assert.deepEqual(stepped, [0, 2, 3, 4, 5]);
+    assert.deepEqual([st.rocks[5].sp, st.rocks[5].calm], [SP.STAR, 0]);
     assert.deepEqual([st.rocks[0].g, st.rocks[0].calm], [140, 0]);
     assert.deepEqual([st.rocks[1].g, st.rocks[1].calm], [200, 30]);
     assert.equal(st.rocks[2].sp, SP.BARE);
