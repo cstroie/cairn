@@ -6,14 +6,23 @@
  */
 import { simTide, catchUp, trample } from './sim.js';
 import { tideOf } from './tide.js';
+import { hash } from './rng.js';
 
 export const KEY = 'lowwater.save';
-export const VERSION = 2;
+export const VERSION = 3;
+export const NICKS = 30, LEDGE_NICKS = 6;   // how many shore names a language has to offer
 export const ROCKS = 13;             // ten, and three on the Deep Ledge
 export const ORDER = [4, 5, 3, 6, 2, 7, 1, 8, 0, 9];     // the order the sand uncovers them
 export const START_ROCKS = 4, START_STONES = 2;
 export const VISIT_GAP = 10;        // minutes hidden after which you have left
 const PRE_AGE = 36;                 // tides a new pool has already seen
+
+/** Give every rock a shore name of its own (a number in the language's list), from the seed. */
+export function christen(st) {
+    const draw = (n, salt) => Array.from({ length: n }, (_, k) => k).sort((a, b) => hash(st.seed, salt + a) - hash(st.seed, salt + b));
+    const main = draw(NICKS, 500), ledge = draw(LEDGE_NICKS, 700);
+    st.rocks.forEach((r, i) => { if (r.nick == null) r.nick = i < 10 ? main[i] : ledge[i - 10]; });
+}
 
 export function newPool(seed, M, settings) {
     const st = {
@@ -24,6 +33,7 @@ export function newPool(seed, M, settings) {
         journal: [], jseq: 0, album: {}, beach: null, bottles: 0, bottleDay: -1,
         settings: Object.assign({ lang: '', sound: true, bell: true, alert: false }, settings)
     };
+    christen(st);
     for (let n = st.last + 1; n <= tideOf(M); n++) simTide(st, n);
     st.journal = [];
     st.lastStorm = -1;
@@ -41,6 +51,7 @@ export function migrate(st) {
         Object.assign(st, { ledge: false, beach: null, bottles: 0, bottleDay: -1 });
         delete st.open;
     }
+    if (st.v < 3) christen(st);                             // version 2: the rocks had no names of their own
     st.v = VERSION;
     st.journal = st.journal || [];
     st.album = st.album || {};

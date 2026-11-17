@@ -1,5 +1,7 @@
 # Low Water
 
+**Play: https://cstroie.github.io/low-water/**
+
 A very slow tide pool you can't control. Ten rocks, a tide every 12 hours 25 minutes on the real
 clock, and one decision: what not to disturb. An installable web app (PWA) that works offline and
 updates itself; the graphics and the sounds are made in code, there are no image or sound files.

@@ -18,7 +18,9 @@ const SHOTS = {
     night: { q: 'at=2026-11-05T23:30&demo=1&seed=7', w: 1280, h: 720 },
     phone: { q: 'at=2026-06-21T10:00&demo=1&seed=7&lang=ro', w: 390, h: 844, low: true, tap: true },
     wide: { q: 'at=2026-03-12T08:20&seed=11', w: 844, h: 390 },
-    ledge: { q: 'at=2026-06-15T13:00&demo=1&seed=7', w: 1280, h: 720, low: true, pan: 400 },
+    ledge: { q: 'at=2026-06-15T13:00&demo=1&seed=7', w: 1280, h: 720, low: true },
+    tall: { q: 'at=2026-06-21T16:00&demo=1&seed=7', w: 390, h: 844 },
+    fresh: { q: 'at=2026-06-21T11:00&seed=3', w: 390, h: 844 },
     guide: { q: 'at=2026-06-21T13:00&demo=1&seed=7', w: 520, h: 800, key: 'g' }
 };
 
@@ -45,8 +47,7 @@ for (const [name, s] of Object.entries(SHOTS)) {
     await page.waitForTimeout(700);
     const btn = page.locator('#panel .btn').first();
     if (await btn.isVisible()) await btn.click();
-    if (s.tap) await page.mouse.click(s.w * 0.5, s.h * 0.74);
-    if (s.pan) await page.mouse.wheel(s.pan, 0);
+    if (s.tap) await page.evaluate(() => { const R = window.lowWater.scene.rocks[4]; window.lowWater.tap = [R.cx, (R.top + R.base) / 2]; }).then(() => page.evaluate(() => window.lowWater.tap)).then(p => page.mouse.click(p[0], p[1]));
     if (s.key) { await page.waitForTimeout(1500); await page.keyboard.press(s.key); }
     await page.waitForTimeout(900);
     await page.screenshot({ path: path.join(out, `${name}.png`) });

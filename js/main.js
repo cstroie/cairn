@@ -94,7 +94,6 @@ function select(i) {
     sel = i;
     if (i < 0) return hud.hideCard();
     audio.unlock(); audio.click();
-    scene.panTo(i);
     if (st.rocks[i].on) scene.touch(i, time);
     hud.showCard(i, st, scene.exposed(i));
 }
@@ -106,7 +105,7 @@ function announce(ids) {
     if (ids.length === 1) hud.toast(t('newPage', { name: panels.pageName(panels.pageById(ids[0])) }));
     else hud.toast(t('newPages', { n: ids.length }));
     audio.chime(Math.min(5, 2 + ids.length));
-    if (res.rocks.length) hud.toast(t('gotRock'));
+    for (const i of res.rocks) hud.toast(t('gotRock', { name: rockName(st, i) }));
     if (res.stones) hud.toast(t('gotStone'));
     if (res.ledge) hud.toast(t('gotLedge'));
     persist(); refresh();
@@ -257,13 +256,7 @@ canvas.addEventListener('pointerdown', e => {
     canvas.setPointerCapture(e.pointerId);
 });
 canvas.addEventListener('pointermove', e => {
-    if (!drag) return;
-    const dx = e.clientX - drag.x;
-    if (!drag.moved && Math.abs(dx) + Math.abs(e.clientY - drag.y) < 8) return;
-    drag.moved = true;
-    scene.target = null;
-    scene.panBy(-dx);
-    drag.x = e.clientX;
+    if (drag && Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) > 12) drag.moved = true;
 });
 const drop = e => {
     if (!drag) return;
@@ -277,7 +270,6 @@ const drop = e => {
 };
 canvas.addEventListener('pointerup', drop);
 canvas.addEventListener('pointercancel', drop);
-canvas.addEventListener('wheel', e => { scene.target = null; scene.panBy(e.deltaX || e.deltaY); }, { passive: true });
 
 addEventListener('keydown', e => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.metaKey || e.ctrlKey || e.altKey) return;

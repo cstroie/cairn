@@ -12,7 +12,6 @@
 import { clamp, lerp, mix, rgb, rgba, smoothstep, TAU } from './util.js';
 import { hash } from '../core/rng.js';
 import { dayOf } from '../core/tide.js';
-import { surfaceY } from './water.js';
 import { lamp } from './sky.js';
 
 /* ---------- the shapes ---------- */
@@ -264,81 +263,81 @@ export function drawFar(ctx, L, env, t, col, about, hits) {
     }
 }
 
-/** In the water. Scene coordinates; call before the water is drawn over. */
+/** In the water: call before the surface is drawn over it. Each swimmer has a depth of its own. */
 export function drawPool(ctx, L, env, t, col, about, hits) {
-    const depth = L.floor - L.yWater, H = L.H;
-    const hit = (id, x, y, r) => hits.push({ id, x: x - L.pan, y, r });
+    const W = L.W, deep = L.hw / L.unit;                    // how much water there is, in rock heights
+    const room = (d, f) => lerp(L.waterY(d), L.floorY(d), f);          // a height between surface (0) and floor (1)
     if (about.has('octopus') && L.spots.length) {
-        const R = L.spots[Math.floor(hash(env.tide, 231) * L.spots.length)], s = H * 0.032;
-        const x = R.cx + R.w * 0.56, y = L.floor - s * 0.45;
+        const R = L.spots[Math.floor(hash(env.tide, 231) * L.spots.length)], s = R.unit * 0.2;
+        const x = R.cx - R.w * 0.6, y = R.base + R.w * 0.06 - s * 0.45;
         octopus(ctx, x, y, s, t);
-        hit('octopus', x, y - s * 0.3, s * 1.8);
+        hits.push({ id: 'octopus', x, y: y - s * 0.3, r: s * 1.8 });
     }
-    if (about.has('jelly') && depth > H * 0.1) {
-        for (let k = 0; k < 2; k++) {
-            const x = ((hash(env.tide, 241 + k) * L.MW + t * (4 + 3 * k)) % (L.MW + 200)) - 100;
-            const y = L.yWater + depth * (0.25 + 0.3 * hash(k, 243)) + Math.sin(t * 0.5 + k * 3) * depth * 0.08, s = H * 0.026;
-            jelly(ctx, x, y, s, t, k);
-            hit('jelly', x, y, s * 2);
-        }
-    }
-    if (about.has('fish') && depth > H * 0.07) {
-        const n = depth > H * 0.16 ? 7 : 3;
-        for (let k = 0; k < n; k++) {
-            const dir = k % 3 ? 1 : -1, sp = H * (0.035 + 0.04 * hash(k, 251));
-            const span = L.SW + 300;
-            const dart = Math.max(0, Math.sin(t * 0.35 + k * 1.7)) * 40;
-            const x = (((hash(k, 252) * span + dir * (t * sp + dart)) % span) + span) % span - 150;
-            const y = L.yWater + depth * (0.22 + 0.62 * hash(k, 253)) + Math.sin(t * 0.7 + k) * H * 0.008, s = H * (0.011 + 0.006 * hash(k, 254));
-            fish(ctx, x, y, s, dir, t, k);
-            hit('fish', x, y, s * 2.6);
-        }
-    }
-    if (about.has('shrimp') && depth > H * 0.03) {
-        for (let k = 0; k < 4; k++) {
+    if (about.has('shrimp')) {
+        for (let k = 0; k < 5; k++) {
             const hop = Math.floor(t * 0.4 + hash(k, 261) * 9), dir = hash(k, hop) < 0.5 ? 1 : -1;
             const u = (t * 0.4 + hash(k, 261) * 9) % 1;
-            const x0 = L.MW * (0.08 + 0.84 * hash(k, hop + 5)), x = x0 + dir * smoothstep(0, 0.25, u) * H * 0.05;
-            const y = Math.max(L.yWater + H * 0.012, L.floor - H * (0.012 + 0.02 * hash(k, 263))), s = H * 0.008;
+            const d = 0.15 + 0.8 * hash(k, hop + 5), s = L.unit * 0.05 * L.sc(d);
+            const x = L.px(0.06 + 0.88 * hash(k, hop + 6), d) + dir * smoothstep(0, 0.25, u) * s * 6, y = L.floorY(d) - s;
             shrimp(ctx, x, y, s, dir, t);
-            hit('shrimp', x, y, s * 3.4);
+            hits.push({ id: 'shrimp', x, y, r: s * 3.4 });
+        }
+    }
+    if (about.has('fish') && deep > 0.3) {
+        const n = deep > 0.6 ? 8 : 4;
+        for (let k = 0; k < n; k++) {
+            const dir = k % 3 ? 1 : -1, d = 0.1 + 0.85 * hash(k, 250), sc = L.sc(d);
+            const sp = L.unit * (0.22 + 0.25 * hash(k, 251)) * sc, span = W + 300;
+            const dart = Math.max(0, Math.sin(t * 0.35 + k * 1.7)) * 40;
+            const x = (((hash(k, 252) * span + dir * (t * sp + dart)) % span) + span) % span - 150;
+            const y = room(d, 0.3 + 0.5 * hash(k, 253)) + Math.sin(t * 0.7 + k) * L.unit * 0.03, s = L.unit * (0.07 + 0.04 * hash(k, 254)) * sc;
+            fish(ctx, x, y, s, dir, t, k);
+            hits.push({ id: 'fish', x, y, r: s * 2.6 });
+        }
+    }
+    if (about.has('jelly') && deep > 0.4) {
+        for (let k = 0; k < 2; k++) {
+            const d = 0.3 + 0.5 * hash(env.tide, 240 + k), s = L.unit * 0.17 * L.sc(d);
+            const x = ((hash(env.tide, 241 + k) * W + t * (4 + 3 * k)) % (W + 200)) - 100;
+            const y = room(d, 0.2 + 0.1 * Math.sin(t * 0.5 + k * 3));
+            jelly(ctx, x, y, s, t, k);
+            hits.push({ id: 'jelly', x, y, r: s * 2 });
         }
     }
 }
 
-/** Over the water and on the sand. Scene coordinates. */
+/** On the water and on the sand. */
 export function drawOver(ctx, L, env, t, col, about, hits) {
     const H = L.H;
     if (about.has('glow')) {                                        // the sea sparkles where it moves
         ctx.globalCompositeOperation = 'lighter';
-        const cell = H * 0.035, first = Math.floor(L.pan / cell);
-        for (let i = first; i < first + Math.ceil(L.W / cell) + 1; i++) {
+        for (let i = 0; i < 90; i++) {
             const tw = Math.pow(Math.max(0, Math.sin(t * (1.5 + hash(i, 271) * 2) + hash(i, 272) * 9)), 6);
             if (tw < 0.05) continue;
-            const x = (i + hash(i, 273)) * cell, y = surfaceY(L, env, t, x) + hash(i, 274) * H * 0.02;
-            const g = ctx.createRadialGradient(x, y, 0, x, y, H * 0.012);
+            const d = hash(i, 274), x = hash(i, 273) * L.W, y = L.waterY(d), r = L.unit * 0.09 * L.sc(d);
+            const g = ctx.createRadialGradient(x, y, 0, x, y, r);
             g.addColorStop(0, `rgba(120,235,255,${0.9 * tw})`); g.addColorStop(1, 'rgba(60,160,255,0)');
-            ctx.fillStyle = g; ctx.fillRect(x - H * 0.012, y - H * 0.012, H * 0.024, H * 0.024);
+            ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2);
         }
         ctx.globalCompositeOperation = 'source-over';
     }
     if (about.has('wader')) {
         const ph = t * 0.05 + hash(dayOf(env.M), 281) * 6;
-        const x = L.MW * (0.5 + 0.36 * Math.sin(ph)), dir = Math.cos(ph) >= 0 ? 1 : -1;
-        const y = L.floor + H * 0.05, s = H * 0.03, peck = Math.sin(t * 0.9) > 0.72;
+        const x = L.W * (0.5 + 0.36 * Math.sin(ph)), dir = Math.cos(ph) >= 0 ? 1 : -1;
+        const y = Math.max(L.shore, L.yNear) + H * 0.05, s = L.unit * 0.24, peck = Math.sin(t * 0.9) > 0.72;
         wader(ctx, x, y, s, dir, peck ? 0 : t, peck);
-        hits.push({ id: 'wader', x: x - L.pan, y: y - s * 0.6, r: s * 1.5 });
+        hits.push({ id: 'wader', x, y: y - s * 0.6, r: s * 1.5 });
     }
 }
 
-/** What lies on the sand: beach.items [{ k, x, done }]. Scene coordinates. */
+/** What lies on the near sand: beach.items [{ k, x, done }]. */
 export function drawBeach(ctx, L, t, beach, hits) {
     if (!beach) return;
-    const s = L.H * 0.02;
+    const s = L.unit * 0.15;
     beach.items.forEach((it, k) => {
         if (it.done) return;
-        const x = L.MW * (0.05 + 0.9 * it.x), y = L.floor + L.H * (0.04 + 0.03 * hash(k, 291));
-        ctx.strokeStyle = `rgba(255,255,255,${0.25 + 0.25 * Math.sin(t * 2.5 + k)})`; ctx.lineWidth = 2;
+        const x = L.W * (0.08 + 0.84 * it.x), y = L.yNear + L.H * (0.05 + 0.025 * hash(k, 291));
+        ctx.strokeStyle = `rgba(255,255,255,${0.3 + 0.3 * Math.sin(t * 2.5 + k)})`; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.ellipse(x, y, s * 2.3, s * 1.1, 0, 0, TAU); ctx.stroke();
         if (it.k === 'strandedStar') star(ctx, x, y, s * 1.1, t);
         else if (it.k === 'strandedFish') {
@@ -347,7 +346,7 @@ export function drawBeach(ctx, L, t, beach, hits) {
         } else if (it.k === 'driftwood') driftwood(ctx, x, y, s * 0.9);
         else if (it.k === 'net') net(ctx, x, y, s * 1.3);
         else bottle(ctx, x, y, s * 1.1);
-        hits.push({ id: it.k, k, x: x - L.pan, y, r: s * 2.6 });
+        hits.push({ id: it.k, k, x, y, r: s * 2.6 });
     });
 }
 

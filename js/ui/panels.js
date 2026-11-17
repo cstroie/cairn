@@ -4,8 +4,8 @@
  */
 import { t, L, LANGS, lang, duration, sentence } from '../i18n.js';
 import { ICON } from './icons.js';
-import { esc, cap } from './hud.js';
-import { EVENTS, LEDGE } from '../core/sim.js';
+import { esc, cap, rockName } from './hud.js';
+import { EVENTS } from '../core/sim.js';
 import { ALBUM, found, has, nextUnlock } from '../core/world.js';
 import { portrait } from '../render/creatures.js';
 import { glyph } from '../render/ambient.js';
@@ -39,10 +39,10 @@ function open(title, html, opts = {}) {
 
 const clock = M => { const f = fieldsOf(M); return `${String(f.hour).padStart(2, '0')}:${String(f.minute).padStart(2, '0')}`; };
 
-function entryLine(e, nowTide) {
+function entryLine(e, nowTide, st) {
     const days = Math.floor((nowTide - e.t) * TIDE / DAY);
     const when = days <= 0 ? t('today') : days === 1 ? t('yesterday') : t('daysAgo', { n: days });
-    const rock = e.rock >= 0 ? (e.name || (e.rock >= LEDGE ? t('ledgeN', { n: e.rock - LEDGE + 1 }) : t('rockN', { n: e.rock + 1 }))) : '';
+    const rock = e.rock >= 0 ? (e.name || rockName(st, e.rock)) : '';
     return `<li><small>${esc(when)}</small><span>${esc(sentence({ evName: EVENTS[e.ev], sp: e.sp }, rock))}</span></li>`;
 }
 
@@ -56,7 +56,7 @@ export function welcome(res, st, env, done) {
     const list = entriesSince(st, res.since).slice().reverse().slice(0, 30);
     const away = res.tides > 0 ? `<p>${esc(t('away', { d: duration(res.awayMin), t: L().tideCount(res.tides) }))}</p>` : '';
     const walk = res.walked ? `<p>${esc(res.stepped.length ? t('walked') : t('walkedNone'))}</p>` : '';
-    const what = list.length ? `<p class="sub">${esc(t('whileGone'))}</p><ul class="log">${list.map(e => entryLine(e, env.tide)).join('')}</ul>`
+    const what = list.length ? `<p class="sub">${esc(t('whileGone'))}</p><ul class="log">${list.map(e => entryLine(e, env.tide, st)).join('')}</ul>`
         : `<p><i>${esc(t('keptToItself'))}</i></p>`;
     const s = open(t('welcome'), `<div class="story">${away}${walk}</div>${what}<button class="btn">${esc(t('begin'))}</button>`, { onClose: done });
     s.querySelector('.btn').onclick = close;
@@ -65,7 +65,7 @@ export function welcome(res, st, env, done) {
 export function diary(st, env) {
     const list = st.journal.slice().reverse();
     open(t('diary'), `<p class="sub">${esc(t('diarySub'))}</p>` + (list.length
-        ? `<ul class="log">${list.map(e => entryLine(e, env.tide)).join('')}</ul>`
+        ? `<ul class="log">${list.map(e => entryLine(e, env.tide, st)).join('')}</ul>`
         : `<p><i>${esc(t('diaryEmpty'))}</i></p>`));
 }
 

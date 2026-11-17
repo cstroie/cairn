@@ -40,7 +40,8 @@ tiny, young, grown, full grown.
 
 ## What you decide
 
-You have five cairn stones. Tap a rock, then **Place a cairn** (or lift it). A rock with a cairn
+You start with four rocks and two cairn stones; the rest come as you fill the field guide (below),
+up to ten rocks and five stones. Tap a rock, then **Place a cairn** (or lift it). A rock with a cairn
 is left alone.
 
 When you leave, you wade out across the rocks that have no cairn: what lives there is stepped on,
@@ -49,20 +50,48 @@ off. You have left when the app has been out of sight for more than ten minutes;
 another app costs nothing.
 
 The rare things (anemones, sea stars) need quiet: days of it. Visit often and walk the same rocks
-and only the common things win. Choose the five you will leave alone, and go away for a while.
+and only the common things win. Choose the ones you will leave alone, and go away for a while.
+
+## The field guide
+
+Fifty pages to find, and nothing to lose by not finding them.
+
+- **On the rocks**: what lives there, at each of its sizes. Just looking writes the page.
+- **Around the pool**: fish, prawns, gulls, an oystercatcher at low water, a seal or dolphins some
+  days, an octopus on some night high tides, jellyfish in summer. Tap what you spot.
+- **Under the weed**: at low water, when a rock stands out of the water, you can look under its
+  weed. It costs the rock its quiet, and a rock with a cairn is left alone.
+- **Wonders**: a storm, a spring low water, a full moon, the lighthouse at night, the sea sparkling
+  on dark summer nights, a rainbow, a shooting star. After a storm, things lie on the sand: carry
+  the stranded ones back, clear the wrack. Some days a bottle washes up with a message.
+
+Pages found make the sand shift and uncover more rocks, wash up more cairn stones, and at last
+show the **Deep Ledge**: three low rocks far out, with a life of their own, that stand out of the
+water only at a spring low tide (around new and full moon). Only then can you reach them.
+
+Every rock has a name from the shore; the pencil gives it yours.
+
+## Coming back, and looking ahead
+
+When you come back, the tides you missed run past in a few seconds before the diary tells you what
+happened. The clock button runs the next day of the tide as a time-lapse; the pool itself does not
+change. In the settings you can ask for a notification near low water; it works when the browser
+allows it, best with the app installed.
 
 ## Hands and keys
 
 | | |
 |---|---|
-| tap a rock | look at it: what lives on it, how long it has been quiet |
-| drag sideways | move along the pool (on a narrow screen) |
+| tap a rock | look at it: what lives on it, how long it has been quiet; what lives there reacts |
+| tap a creature, a bird, a thing on the sand | spot it, pick it up |
 | the pencil | name the rock |
+| the star | the field guide |
 | the book | the diary: what the pool did, newest first |
-| the waves, or the tide chip | the tide table: the next day of the tide |
+| the clock | the time-lapse of the next day |
+| the tide chip | the tide table: the next high and low waters |
 | the sun | settings: language, sound, the tide bell, a new pool |
 | left/right, 1-9 and 0 | choose a rock |
 | Space or Enter | put a cairn on it, or lift it |
-| N, T, J, B, ? | name, tides, diary (journal), bell, the first words |
+| N, T, J, G, P, B, ? | name, tides, diary (journal), guide, time-lapse (peek), bell, the first words |
 
 The pool is kept in the browser's storage on this device.

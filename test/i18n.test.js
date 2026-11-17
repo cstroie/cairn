@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { LANGS, setLang, t, duration, sentence } from '../js/i18n.js';
 import { EVENTS, SP } from '../js/core/sim.js';
 import { ALBUM } from '../js/core/world.js';
+import { NICKS, LEDGE_NICKS } from '../js/core/state.js';
 
 test('every language has the same keys, of the same kind', () => {
     const keys = Object.keys(LANGS.en).sort();
@@ -18,6 +19,8 @@ test('every language has the same keys, of the same kind', () => {
         assert.deepEqual(Object.keys(lang.album).sort(), pages, `${code}.album`);
         for (const v of Object.values(lang.album)) assert.ok(v.length === 2 && v[0] && v[1].length > 20);
         for (let i = 1; i < 12; i++) assert.ok(lang.fact[i].length > 20 && lang.desc[i] && lang.sp[i], `${code} species ${i}`);
+        assert.equal(lang.rockNames.length, NICKS); assert.equal(lang.ledgeNames.length, LEDGE_NICKS);
+        assert.equal(new Set([...lang.rockNames, ...lang.ledgeNames]).size, NICKS + LEDGE_NICKS, `${code} names repeat`);
         assert.deepEqual(Object.keys(lang.kind).sort(), [...new Set(ALBUM.map(a => a.kind))].sort());
     }
 });

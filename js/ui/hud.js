@@ -17,7 +17,11 @@ const el = (tag, attrs = {}, html = '') => {
     return e;
 };
 export const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-export const rockName = (st, i) => st.rocks[i].name || (i >= LEDGE ? t('ledgeN', { n: i - LEDGE + 1 }) : t('rockN', { n: i + 1 }));
+/** A rock's name: the one the player gave it, else its shore name in this language. */
+export function rockName(st, i) {
+    const r = st.rocks[i], ledge = i >= LEDGE;
+    return r.name || (ledge ? L().ledgeNames : L().rockNames)[r.nick] || (ledge ? t('ledgeN', { n: i - LEDGE + 1 }) : t('rockN', { n: i + 1 }));
+}
 export const fmtClock = f => `${String(f.hour).padStart(2, '0')}:${String(f.minute).padStart(2, '0')}`;
 
 /** What the tide is doing, in words. */

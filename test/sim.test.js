@@ -23,6 +23,10 @@ test('the same seed gives the same pool', () => {
 
 test('a new pool is alive, with an empty journal', () => {
     const st = newPool(7, M0);
+    assert.equal(new Set(st.rocks.slice(0, 10).map(r => r.nick)).size, 10);
+    assert.equal(new Set(st.rocks.slice(10).map(r => r.nick)).size, 3);
+    assert.ok(st.rocks.every((r, i) => r.nick >= 0 && r.nick < (i < 10 ? 30 : 6)));
+    assert.notDeepEqual(st.rocks.map(r => r.nick), newPool(8, M0).rocks.map(r => r.nick));
     assert.equal(st.rocks.length, 13);
     assert.deepEqual(st.rocks.map((r, i) => (r.on ? i : -1)).filter(i => i >= 0), [3, 4, 5, 6]);
     assert.equal(st.stones, 2);
@@ -163,7 +167,8 @@ test('the save goes round, and rubbish is refused', () => {
     const old = migrate({ v: 1, last: 5, open: 10, stones: 5, rocks: Array.from({ length: 10 }, () => ({ sp: 2, g: 9, calm: 1, cairn: false, name: '' })) });
     assert.equal(old.rocks.length, 13);
     assert.deepEqual(old.rocks.map(r => r.on), [...Array(10).fill(true), false, false, false]);
-    assert.equal(old.v, 2);
+    assert.equal(old.v, 3);
+    assert.equal(new Set(old.rocks.slice(0, 10).map(r => r.nick)).size, 10);
     assert.equal(migrate('x'), null);
     mem.set('lowwater.save', '{oops');
     assert.equal(load(store), null);
