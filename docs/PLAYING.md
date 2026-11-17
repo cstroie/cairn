@@ -54,7 +54,7 @@ and only the common things win. Choose the ones you will leave alone, and go awa
 
 ## The field guide
 
-Fifty pages to find, and nothing to lose by not finding them.
+Fifty-two pages to find, and nothing to lose by not finding them.
 
 - **On the rocks**: what lives there, at each of its sizes. Just looking writes the page.
 - **Around the pool**: fish, prawns, gulls, an oystercatcher at low water, a seal or dolphins some

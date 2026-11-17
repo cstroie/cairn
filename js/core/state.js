@@ -4,7 +4,7 @@
  * Nothing here touches the browser: `store` is anything with getItem and
  * setItem.
  */
-import { simTide, catchUp, trample } from './sim.js';
+import { simTide, catchUp, trample, snapshot } from './sim.js';
 import { tideOf } from './tide.js';
 import { hash } from './rng.js';
 
@@ -35,7 +35,7 @@ export function newPool(seed, M, settings) {
         settings: Object.assign({ lang: '', sound: true, bell: true, alert: false }, settings)
     };
     christen(st);
-    for (let n = st.last + 1; n <= tideOf(M); n++) simTide(st, n);
+    for (let n = st.last + 1; n <= tideOf(M); n++) { simTide(st, n); if (n % 2 === 0) snapshot(st, n); }
     st.journal = [];
     st.lastStorm = -1;
     for (const r of st.rocks) r.calm = Math.min(r.calm, 6);

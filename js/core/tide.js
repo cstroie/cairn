@@ -74,6 +74,18 @@ export function nextWaters(M, count = 4) {
     return out;
 }
 
+/**
+ * The next low water worth getting up for: a spring tide (the lowest), in
+ * daylight, within `days`. M of that low water, or null.
+ */
+export function bestLow(M, days = 16) {
+    for (let c = tideOf(M); c * TIDE < M + days * DAY; c++) {
+        const low = c * TIDE + LOW;
+        if (low > M && springness(low) >= 0.8 && sun(low).alt > 0.05) return low;
+    }
+    return null;
+}
+
 /** 0 winter (December to February), 1 spring, 2 summer, 3 autumn. */
 export function seasonOf(M) {
     return [0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 0][fieldsOf(M).month];

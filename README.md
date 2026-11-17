@@ -23,8 +23,8 @@ Choose. Then go away for a while.
 - **Slow life.** Eleven kinds of life follow each other on the rocks: film, barnacles, kelp,
   mussels, anemones, urchins, sea stars, hermit crabs. When the sand uncovers the Deep Ledge,
   sponges, sea slugs and brittle stars come too.
-- **A field guide to fill.** Fifty pages: what grows on the rocks, seals and dolphins out at
-  sea, waders on the sand, what hides under the weed, shooting stars, glowing waves, a message
+- **A field guide to fill.** Fifty-two pages: what grows on the rocks, seals and dolphins out at
+  sea, waders and a heron at dawn, what hides under the weed, the green flash at sunset, a message
   in a bottle. Each page you find uncovers another rock or washes up another stone.
 - **A journal** of what happened while you were gone: storms, arrivals, losses.
 - **Made in code.** Every rock, wave, creature and sound is drawn or synthesized as it runs.

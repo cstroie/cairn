@@ -9,7 +9,7 @@ import { EVENTS } from '../core/sim.js';
 import { ALBUM, found, has, nextUnlock } from '../core/world.js';
 import { portrait } from '../render/creatures.js';
 import { glyph } from '../render/ambient.js';
-import { TIDE, DAY, level, nextWaters, fieldsOf, sun, dayOf } from '../core/tide.js';
+import { TIDE, DAY, level, nextWaters, fieldsOf, sun, dayOf, bestLow } from '../core/tide.js';
 import { entriesSince } from '../core/state.js';
 import { versionLabel, checkNow, install, canInstall } from '../pwa.js';
 
@@ -62,11 +62,14 @@ export function welcome(res, st, env, done) {
     s.querySelector('.btn').onclick = close;
 }
 
-export function diary(st, env) {
-    const list = st.journal.slice().reverse();
-    open(t('diary'), `<p class="sub">${esc(t('diarySub'))}</p>` + (list.length
+export function diary(st, env, replay) {
+    const list = st.journal.slice().reverse(), days = Math.floor(((st.hist || []).length - 1));
+    const s = open(t('diary'), `<p class="sub">${esc(t('diarySub'))}</p>` +
+        (replay && days >= 3 ? `<button class="btn replay">${esc(t('replay', { d: days }))}</button>` : '') + (list.length
         ? `<ul class="log">${list.map(e => entryLine(e, env.tide, st)).join('')}</ul>`
         : `<p><i>${esc(t('diaryEmpty'))}</i></p>`));
+    const b = s.querySelector('.replay');
+    if (b) b.onclick = () => { close(); replay(); };
 }
 
 export function tides(env) {
@@ -75,7 +78,10 @@ export function tides(env) {
         const day = d === 0 ? t('today') : d === 1 ? t('tomorrow') : '';
         return `<tr><td>${esc(t(w.high ? 'highWater' : 'lowWater'))} <small>${esc(day)}</small></td><td>${clock(w.M)}</td></tr>`;
     }).join('');
-    const s = open(t('tides'), `<p class="sub">${esc(t('tidesSub'))}</p><canvas class="curve"></canvas><table>${rows}</table>`);
+    const best = bestLow(env.M), bf = best && fieldsOf(best);
+    const when = best ? new Date(Date.UTC(bf.year, bf.month, bf.day)).toLocaleDateString(lang(), { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }) + ', ' + clock(best) : '';
+    const tip = best ? `<p class="best"><b>${esc(t('bestLow'))}</b> ${esc(when)}. ${esc(t('bestLowWhy'))}</p>` : '';
+    const s = open(t('tides'), `<p class="sub">${esc(t('tidesSub'))}</p><canvas class="curve"></canvas><table>${rows}</table>${tip}`);
     const c = s.querySelector('canvas'), dpr = Math.min(2, devicePixelRatio || 1);
     const W = c.clientWidth, H = c.clientHeight, ctx = c.getContext('2d');
     c.width = W * dpr; c.height = H * dpr; ctx.scale(dpr, dpr);
@@ -116,6 +122,7 @@ export function settings(st, hooks) {
         <div class="row"><div>${esc(t('bell'))}<small>${esc(t('bellSub'))}</small></div>${sw('s-bell', st.settings.bell)}</div>
         ${'Notification' in window ? `<div class="row"><div>${esc(t('alert'))}<small>${esc(t('alertSub'))}</small></div>${sw('s-alert', st.settings.alert)}</div>` : ''}
         <div class="row"><div>${esc(t('tides'))}</div><button id="s-tides">${esc(t('tides'))}</button></div>
+        <div class="row"><div>${esc(t('postcard'))}<small>${esc(t('postcardSub'))}</small></div><button id="s-card">${esc(t('postcardSave'))}</button></div>
         <div class="row"><div>${esc(t('version'))}<small>${esc(versionLabel())}</small></div><button id="s-update">${esc(t('checkUpdate'))}</button></div>
         ${canInstall() ? `<div class="row"><div>${esc(t('install'))}</div><button id="s-install">${esc(t('install'))}</button></div>` : ''}
         <div class="row"><div>${esc(t('newPool'))}</div><button id="s-new">${esc(cap(t('newPool')))}</button></div>
@@ -131,6 +138,7 @@ export function settings(st, hooks) {
         };
     }
     s.querySelector('#s-tides').onclick = hooks.tides;
+    s.querySelector('#s-card').onclick = () => { close(); setTimeout(hooks.postcard, 350); };
     s.querySelector('#s-update').onclick = checkNow;
     const inst = s.querySelector('#s-install');
     if (inst) inst.onclick = install;

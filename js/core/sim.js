@@ -41,7 +41,10 @@ export function log(st, tide, ev, rock, sp) {
     if (st.journal.length > JOURNAL) st.journal.splice(0, st.journal.length - JOURNAL);
 }
 
-function becomes(r, sp, g) { r.sp = sp; r.g = g; }
+let NOW = 0;                        // the tide being simulated: a rock remembers when its life came
+function becomes(r, sp, g) { if (r.sp !== sp) r.t = NOW; r.sp = sp; r.g = g; }
+
+export const HISTORY = 90;          // daily pictures of the pool kept for the replay (three months)
 
 function grow(r, b, season) {
     if (season === 0) b = Math.max(1, b >> 1);
@@ -52,6 +55,7 @@ function grow(r, b, season) {
 
 /** One tide for the whole pool. */
 export function simTide(st, n) {
+    NOW = n;
     const season = seasonOfTide(n);
     const storm = rnd(st) < TB_STORM[season];
     if (storm) { st.lastStorm = n; log(st, n, EV.STORM, -1, 0); }
@@ -158,12 +162,20 @@ function rock(st, n, i, season, storm) {
     }
 }
 
+/** A picture of the pool once a day (every other tide), for the replay: [tide, [sp, g] or 0 per rock]. */
+export function snapshot(st, n) {
+    st.hist = st.hist || [];
+    if (st.hist.length && st.hist[st.hist.length - 1][0] >= n) return;
+    st.hist.push([n, st.rocks.map(r => (r.on ? [r.sp, r.g] : 0))]);
+    if (st.hist.length > HISTORY) st.hist.splice(0, st.hist.length - HISTORY);
+}
+
 /** Bring the pool up to tide `now`. Returns the number of tides simulated. */
 export function catchUp(st, now) {
     if (now <= st.last) return 0;
     let from = st.last + 1;
     if (now - from >= CAP) from = now - CAP + 1;
-    for (let n = from; n <= now; n++) simTide(st, n);
+    for (let n = from; n <= now; n++) { simTide(st, n); if (n % 2 === 0) snapshot(st, n); }
     return now - from + 1;
 }
 
@@ -173,6 +185,7 @@ export function catchUp(st, now) {
  * star or an urchin only clamps down and stays), and the quiet starts again. Returns the rocks that were stepped on.
  */
 export function trample(st) {
+    NOW = st.last;
     const stepped = [];
     for (let i = 0; i < st.rocks.length; i++) {
         const r = st.rocks[i];

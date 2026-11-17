@@ -66,3 +66,11 @@ test('the weather is the same for the same moment, and in range', () => {
     assert.equal(T.env(M, T.tideOf(M)).storm, true);
     assert.equal(T.env(M, 5).storm, false);
 });
+
+test('the next great low water is a spring tide in daylight', () => {
+    const M = T.minuteOf(new Date(2026, 5, 1, 9, 0));
+    const b = T.bestLow(M);
+    assert.ok(b > M && b < M + 16 * T.DAY);
+    assert.equal(T.phaseOf(b), T.LOW);
+    assert.ok(T.springness(b) >= 0.8 && T.sun(b).alt > 0.05);
+});

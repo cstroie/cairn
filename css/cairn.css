@@ -86,6 +86,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); transition: left 0.2s; }
 .switch[aria-checked="true"] { background: var(--sea); }
 .switch[aria-checked="true"]::after { left: 25px; }
+.best { margin: 12px 0 0; padding: 10px 12px; border-radius: 12px; background: rgba(88, 196, 192, 0.16); font-size: 14px; }
 .about { font-size: 13px; opacity: 0.7; }
 
 #banners { position: fixed; left: 0; right: 0; top: calc(66px + var(--safe-t)); display: grid; justify-items: center; gap: 8px; pointer-events: none; z-index: 6; padding: 0 12px; }

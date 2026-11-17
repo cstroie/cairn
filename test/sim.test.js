@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { SP, EV, CAP, simTide, catchUp, trample, toggleCairn, stonesLeft, stage } from '../js/core/sim.js';
+import { SP, EV, CAP, simTide, catchUp, trample, toggleCairn, stonesLeft, stage, HISTORY } from '../js/core/sim.js';
 import { newPool, arrive, migrate, save, load, entriesSince, VISIT_GAP } from '../js/core/state.js';
 import { TIDE, tideOf, seasonOfTide } from '../js/core/tide.js';
 
@@ -176,4 +176,14 @@ test('the save goes round, and rubbish is refused', () => {
     assert.deepEqual(load({ getItem: k => prev.get(k) ?? null }), st);
     mem.set('cairn.save', '{oops');
     assert.equal(load(store), null);
+});
+
+test('the pool keeps a picture a day, and each rock when its life came', () => {
+    const st = newPool(5, M0);
+    const end = st.last + 400; catchUp(st, end + (end % 2));               // end on a tide that is pictured
+    assert.ok(st.hist.length > 0 && st.hist.length <= HISTORY);
+    for (let k = 1; k < st.hist.length; k++) assert.equal(st.hist[k][0] - st.hist[k - 1][0], 2);
+    const last = st.hist[st.hist.length - 1];
+    st.rocks.forEach((r, i) => { if (r.on) assert.deepEqual(last[1][i], [r.sp, r.g]); else assert.equal(last[1][i], 0); });
+    for (const r of st.rocks) if (r.on && r.sp && r.t != null) assert.ok(r.t <= st.last && r.t > st.last - 400 - 40);
 });

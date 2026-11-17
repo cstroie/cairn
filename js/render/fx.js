@@ -11,7 +11,7 @@ import { hash, seeded } from '../core/rng.js';
 /** Nets of light on the floor, where the sun shines through shallow water. */
 export function drawCaustics(ctx, L, env, t, sunK) {
     const depth = L.hw / L.unit;
-    const k = sunK * clamp(depth * 3) * clamp(1.6 - depth) * (1 - env.weather.rain);
+    const k = sunK * clamp(env.sun.alt * 1.8) * clamp(depth * 3) * clamp(1.6 - depth) * (1 - env.weather.rain);
     if (k < 0.03) return;
     ctx.save();
     ctx.beginPath(); ctx.rect(0, L.waterY(0), L.W, L.shore - L.waterY(0)); ctx.clip();

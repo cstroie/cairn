@@ -8,16 +8,16 @@
  *   &seed=7                the pool      &demo=1     one of everything
  *   &lang=ro               &all=1        every rock uncovered, the ledge too
  */
-import { minuteOf, env as envOf, tideOf, fieldsOf, nextWaters, LOW } from './core/tide.js';
+import { minuteOf, env as envOf, tideOf, fieldsOf, nextWaters, LOW, TIDE } from './core/tide.js';
 import { catchUp, toggleCairn, EVENTS, LEDGE } from './core/sim.js';
 import { newPool, load, save, arrive } from './core/state.js';
 import * as world from './core/world.js';
 import { Scene } from './render/scene.js';
 import { Audio } from './audio/engine.js';
-import { Hud, rockName, fmtClock } from './ui/hud.js';
+import { Hud, rockName, fmtClock, tideWords } from './ui/hud.js';
 import * as panels from './ui/panels.js';
 import * as pwa from './pwa.js';
-import { setLang, sentence, t, L } from './i18n.js';
+import { setLang, sentence, t, L, lang } from './i18n.js';
 
 const params = new URLSearchParams(location.search);
 const dev = ['at', 'rate', 'demo', 'seed', 'all'].some(k => params.has(k));
@@ -50,16 +50,17 @@ audio.enabled = st.settings.sound;
 let sel = -1, env = envOf(nowM(), st.lastStorm), lastPhase = env.phase, about = new Set();
 let lapse = null;               // coming back: the tides you missed, run fast
 let peek = null;                // looking ahead: { off (minutes), play }
+let replay = null;              // looking back: the pool's days, run fast
 let time = 0;                   // seconds, for the picture
 let nameList = [];
 
 const persist = () => { st.away = nowMs(); st.seen = Math.floor(nowM()); save(store, st); };
-const settingsHooks = () => ({ set: setting, newPool: startOver, tides: () => panels.tides(env) });
+const settingsHooks = () => ({ set: setting, newPool: startOver, tides: () => panels.tides(env), postcard });
 
 const hud = new Hud({
     tool: name => {
         audio.unlock(); audio.click();
-        if (name === 'diary') panels.diary(st, env);
+        if (name === 'diary') panels.diary(st, env, startReplay);
         else if (name === 'guide') panels.guide(st);
         else if (name === 'tides') panels.tides(env);
         else if (name === 'peek') setPeek(peek ? null : { off: 0, play: true });
@@ -114,7 +115,7 @@ function announce(ids) {
 /** Look at the pool: what is about, what is seen for the first time, what the sea left. */
 function look() {
     about = world.surprises(env);
-    if (lapse || peek || panels.isOpen() || document.hidden) return;
+    if (lapse || peek || replay || panels.isOpen() || document.hidden) return;
     world.tideLine(st, env);
     announce(world.observe(st, env, about));
 }
@@ -193,6 +194,43 @@ function setPeek(p) {
     if (peek) select(-1);
     showPeek();
 }
+/** The pool as it is now, on a postcard: the picture, and a line saying where and when. */
+function postcard() {
+    const src = canvas, w = src.width, h = src.height, strip = Math.round(h * 0.11);
+    const c = document.createElement('canvas'); c.width = w; c.height = h + strip;
+    const x = c.getContext('2d');
+    x.fillStyle = '#f7f1e3'; x.fillRect(0, 0, w, h + strip);
+    x.drawImage(src, 0, 0);
+    const f = fieldsOf(nowM()), when = new Date(Date.UTC(f.year, f.month, f.day)).toLocaleDateString(lang(), { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+    const pad = strip * 0.32, big = strip * 0.32, small = strip * 0.2;
+    x.fillStyle = '#22303c'; x.textBaseline = 'middle';
+    x.font = `600 ${big}px Georgia, serif`;
+    x.fillText(t('postcardFrom', { shore: L().shores[scene.L.land.kind] }), pad, h + strip * 0.38);
+    x.font = `${small}px system-ui, sans-serif`; x.globalAlpha = 0.7;
+    x.fillText(`${when} · ${fmtClock(f)} · ${tideWords(env).state}`, pad, h + strip * 0.72);
+    x.textAlign = 'right'; x.font = `italic ${big * 0.9}px Georgia, serif`; x.globalAlpha = 0.85;
+    x.fillText('Cairn', w - pad, h + strip * 0.5);
+    c.toBlob(b => {
+        if (!b) return;
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(b);
+        a.download = `cairn-${f.year}-${String(f.month + 1).padStart(2, '0')}-${String(f.day).padStart(2, '0')}.png`;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+        hud.toast(t('postcardDone'));
+    }, 'image/png');
+}
+
+/** The pool's history, a day a beat: what settled, grew, was torn away. */
+function startReplay() {
+    const frames = (st.hist || []).slice();
+    if (frames.length < 4 || lapse) return;
+    setPeek(null); select(-1);
+    const stop = () => { if (replay) { replay.bar.remove(); replay = null; } };
+    const bar = hud.banner('', [{ label: t('stop'), action: stop }]);
+    replay = { frames, start: null, dur: Math.min(30, Math.max(8, frames.length * 0.4)), bar, label: bar.querySelector('span'), stop };
+}
+
 const showPeek = () => hud.peek(peek && { off: peek.off, play: peek.play, label: fmtClock(fieldsOf(nowM() + peek.off)) });
 
 /* ---------- the picture ---------- */
@@ -217,6 +255,18 @@ function frame(ms) {
             rocks = k < 0.8 ? lapse.before : st.rocks;
             things = world.surprises(e); beach = null;
         }
+    } else if (replay) {
+        if (replay.start == null) replay.start = time;
+        const k = (time - replay.start) / replay.dur, f = replay.frames;
+        if (k >= 1) replay.stop();
+        else {
+            const x = k * (f.length - 1), i = Math.floor(x), fr = f[i];
+            e = envOf(fr[0] * TIDE + (x - i) * 2 * TIDE, -1);
+            rocks = st.rocks.map((r, j) => (fr[1][j] ? Object.assign({}, r, { sp: fr[1][j][0], g: fr[1][j][1] }) : r));
+            things = world.surprises(e); beach = null;
+            const ago = Math.round((st.last - fr[0]) / 2);
+            replay.label.textContent = ago <= 0 ? t('today') : ago === 1 ? t('yesterday') : t('daysAgo', { n: ago });
+        }
     } else if (peek) {
         if (peek.play) { peek.off = (peek.off + dt * 124) % 1490; showPeek(); }
         e = envOf(nowM() + peek.off, -1);
@@ -228,7 +278,7 @@ function frame(ms) {
 
 /* ---------- the hands ---------- */
 
-const SPOT = new Set(['fish', 'shrimp', 'gull', 'wader', 'seal', 'dolphin', 'octopus', 'jelly']);
+const SPOT = new Set(['fish', 'shrimp', 'gull', 'wader', 'heron', 'seal', 'dolphin', 'octopus', 'jelly']);
 
 function tapThing(h) {
     if (SPOT.has(h.id)) {
@@ -261,7 +311,7 @@ canvas.addEventListener('pointermove', e => {
 const drop = e => {
     if (!drag) return;
     const d = drag; drag = null;
-    if (d.moved || e.type === 'pointercancel' || lapse || peek) return;
+    if (d.moved || e.type === 'pointercancel' || lapse || peek || replay) return;
     const r = canvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
     const thing = scene.thingAt(x, y);
     if (thing) return tapThing(thing);
@@ -285,9 +335,10 @@ addEventListener('keydown', e => {
     else if ((k === ' ' || k === 'enter') && sel >= 0 && st.rocks[sel].on) { e.preventDefault(); if (sel < LEDGE || scene.exposed(sel)) hud.hooks.cairn(sel); }
     else if (k === 'n' && sel >= 0 && st.rocks[sel].on) { e.preventDefault(); hud.rename(sel, st); }
     else if (k === 't') panels.tides(env);
-    else if (k === 'j') panels.diary(st, env);
+    else if (k === 'j') panels.diary(st, env, startReplay);
     else if (k === 'g') panels.guide(st);
     else if (k === 'p') setPeek({ toggle: true });
+    else if (k === 'c') postcard();
     else if (k === 'b') { setting('bell', !st.settings.bell); hud.toast(`${t('bell')}: ${t(st.settings.bell ? 'on' : 'off')}`); if (st.settings.bell) audio.bell(); }
     else if (k === '?') panels.intro(() => {});
 });

@@ -17,9 +17,9 @@ export const ALBUM = [
     ...GROWERS.flatMap(sp => [0, 1, 2, 3].map(k => ({ id: `sp${sp}.${k}`, kind: 'life', sp, stage: k }))),
     ...[SP.STAR, SP.CRAB, SP.URCH].map(sp => ({ id: `sp${sp}`, kind: 'life', sp })),
     ...[SP.SPONGE, SP.NUDI, SP.BRIT].map(sp => ({ id: `sp${sp}`, kind: 'ledge', sp })),
-    ...['fish', 'shrimp', 'gull', 'wader', 'seal', 'dolphin', 'octopus', 'jelly'].map(id => ({ id, kind: 'shore' })),
+    ...['fish', 'shrimp', 'gull', 'wader', 'heron', 'seal', 'dolphin', 'octopus', 'jelly'].map(id => ({ id, kind: 'shore' })),
     ...['shorecrab', 'blenny', 'limpet', 'winkle', 'seaslug', 'eggs'].map(id => ({ id, kind: 'under' })),
-    ...['storm', 'springtide', 'fullmoon', 'lighthouse', 'glow', 'rainbow', 'shooting', 'bottle', 'rescue', 'cleanup'].map(id => ({ id, kind: 'wonder' }))
+    ...['storm', 'springtide', 'fullmoon', 'lighthouse', 'glow', 'rainbow', 'shooting', 'greenflash', 'bottle', 'rescue', 'cleanup'].map(id => ({ id, kind: 'wonder' }))
 ];
 export const UNDER = ALBUM.filter(a => a.kind === 'under').map(a => a.id);
 const IDS = new Set(ALBUM.map(a => a.id));
@@ -93,6 +93,8 @@ export function surprises(env) {
         if ((env.season === 2 || env.season === 3) && env.level > 0.5 && hash(env.tide, 105) < 0.35) out.add('jelly');
         if (night && env.season >= 2 && Math.abs(env.moon - 0.5) > 0.28 && w.cloud < 0.55 && hash(d, 106) < 0.6) out.add('glow');
         if (night && w.cloud < 0.5) out.add('shooting');
+        if (h >= 5 && h < 9 && env.sun.up && env.level < 0.45 && hash(d, 108) < 0.5) out.add('heron');          // a heron, fishing at dawn
+        if (!env.sun.up && env.sun.night < 0.012 && w.cloud < 0.3 && w.fog < 0.2 && hash(d, 107) < 0.4) out.add('greenflash');
     }
     if (env.sun.up && env.sun.alt < 0.75 && w.rain > 0.04 && w.rain < 0.7) out.add('rainbow');
     if (env.sun.alt < -0.1) out.add('lighthouse');
@@ -110,7 +112,7 @@ export function observe(st, env, about = surprises(env)) {
     if (env.storm) see('storm');
     if (env.spring > 0.85 && env.level < 0.06) see('springtide');
     if (env.sun.alt < -0.2 && Math.abs(env.moon - 0.5) < 0.035 && env.weather.cloud < 0.6) see('fullmoon');
-    for (const id of ['lighthouse', 'glow', 'rainbow', 'shooting']) if (about.has(id)) see(id);
+    for (const id of ['lighthouse', 'glow', 'rainbow', 'shooting', 'greenflash']) if (about.has(id)) see(id);
     return news;
 }
 

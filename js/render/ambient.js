@@ -82,6 +82,25 @@ function wader(ctx, x, y, s, dir, t, peck) {
     ctx.restore();
 }
 
+/** A grey heron, standing in the shallows, still as a post, and now and then striking. */
+function heron(ctx, x, y, s, dir, strike) {
+    ctx.save(); ctx.translate(x, y); ctx.scale(dir, 1);
+    ctx.strokeStyle = '#4a4c52'; ctx.lineWidth = s * 0.035; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-s * 0.04, 0); ctx.lineTo(-s * 0.02, -s * 0.42); ctx.moveTo(s * 0.06, 0); ctx.lineTo(s * 0.03, -s * 0.42); ctx.stroke();
+    const g = ctx.createLinearGradient(0, -s * 0.9, 0, -s * 0.4);
+    g.addColorStop(0, '#c9ccd2'); g.addColorStop(1, '#868a94');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(0, -s * 0.55, s * 0.13, s * 0.2, -0.35, 0, TAU); ctx.fill();
+    const nx = strike ? s * 0.32 : s * 0.12, ny = strike ? -s * 0.5 : -s * 0.98;
+    ctx.strokeStyle = '#d9dce2'; ctx.lineWidth = s * 0.06;
+    ctx.beginPath(); ctx.moveTo(s * 0.04, -s * 0.68); ctx.quadraticCurveTo(strike ? s * 0.2 : -s * 0.05, -s * 0.85, nx, ny); ctx.stroke();
+    ctx.fillStyle = '#d8b04a';
+    ctx.beginPath(); ctx.moveTo(nx, ny - s * 0.02); ctx.lineTo(nx + s * 0.18, ny + (strike ? s * 0.08 : s * 0.01)); ctx.lineTo(nx, ny + s * 0.025); ctx.fill();
+    ctx.strokeStyle = '#1c1c22'; ctx.lineWidth = s * 0.02;
+    ctx.beginPath(); ctx.moveTo(nx - s * 0.02, ny - s * 0.02); ctx.lineTo(nx - s * 0.12, ny - s * 0.01); ctx.stroke();
+    ctx.restore();
+}
+
 function seal(ctx, x, y, s, t, col) {
     const up = Math.sin(t * 0.23) > -0.5;
     ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1;
@@ -227,6 +246,12 @@ export function drawFar(ctx, L, env, t, col, about, hits) {
             ctx.beginPath(); ctx.arc(cx, cy, R - k * R * 0.022, Math.PI, TAU); ctx.stroke();
         });
     }
+    if (about.has('greenflash')) {                                          // the last of the sun, green for a heartbeat
+        const x = W * 0.9, y = horizon - 1, pulse = 0.6 + 0.4 * Math.sin(t * 3);
+        const g = ctx.createRadialGradient(x, y, 0, x, y, H * 0.03);
+        g.addColorStop(0, `rgba(120,255,150,${0.9 * pulse})`); g.addColorStop(1, 'rgba(60,220,120,0)');
+        ctx.fillStyle = g; ctx.fillRect(x - H * 0.03, y - H * 0.03, H * 0.06, H * 0.03);
+    }
     if (about.has('shooting')) {
         const every = env.fields.month === 7 ? 6 : 13, beat = Math.floor(t / every), u = (t % every) / 0.7;
         if (u < 1 && hash(beat, 201) < 0.6) {
@@ -321,6 +346,12 @@ export function drawOver(ctx, L, env, t, col, about, hits) {
         }
         ctx.globalCompositeOperation = 'source-over';
     }
+    if (about.has('heron') && L.spots.length) {
+        const R = L.spots[Math.floor(hash(dayOf(env.M), 282) * L.spots.length)], s = L.unit * 0.5 * R.s;
+        const x = R.cx + R.w * 0.62, y = R.base + R.w * 0.06, strike = (t % 11) < 0.5;
+        heron(ctx, x, y, s, -1, strike);
+        hits.push({ id: 'heron', x, y: y - s * 0.6, r: s * 0.6 });
+    }
     if (about.has('wader')) {
         const ph = t * 0.05 + hash(dayOf(env.M), 281) * 6;
         const x = L.W * (0.5 + 0.36 * Math.sin(ph)), dir = Math.cos(ph) >= 0 ? 1 : -1;
@@ -363,6 +394,7 @@ export function glyph(ctx, id, w, h, t = 0) {
     case 'jelly': sea(); jelly(ctx, cx, cy - s * 0.08, s * 0.3, t); break;
     case 'octopus': sea(); octopus(ctx, cx, cy + s * 0.06, s * 0.3, t); break;
     case 'gull': sky(); gull(ctx, cx, cy + s * 0.08, s * 0.34, 0.2, '#fff'); break;
+    case 'heron': sea(); heron(ctx, cx, cy + s * 0.42, s * 0.85, 1, false); break;
     case 'wader': sand(); wader(ctx, cx - s * 0.08, cy + s * 0.34, s * 0.4, 1, 0, false); break;
     case 'seal': farSea(); seal(ctx, cx - s * 0.04, h * 0.66, s * 0.22, 0, '#39404a'); break;
     case 'dolphin': farSea(); dolphin(ctx, cx - s * 0.36, h * 0.74, s * 0.2, 0.42, '#39404a'); break;
@@ -474,6 +506,16 @@ function more(ctx, id, w, h, s, bg) {
         bg.sky(); ctx.lineWidth = s * 0.045;
         ['#f0504a', '#f6a23c', '#f4e04e', '#5cc46a', '#4c8ee6', '#8a5ad0'].forEach((c, k) => { ctx.strokeStyle = c; ctx.beginPath(); ctx.arc(cx, h * 0.92, s * (0.46 - k * 0.045), Math.PI, TAU); ctx.stroke(); });
         break;
+    case 'greenflash': {
+        const g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#2a3a6a'); g.addColorStop(0.6, '#f0a070'); g.addColorStop(1, '#f6c890');
+        ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = '#2b5a78'; ctx.fillRect(0, h * 0.64, w, h * 0.36);
+        const gl = ctx.createRadialGradient(cx, h * 0.64, 0, cx, h * 0.64, s * 0.2);
+        gl.addColorStop(0, '#9effb0'); gl.addColorStop(1, 'rgba(80,230,130,0)');
+        ctx.fillStyle = gl; ctx.fillRect(0, h * 0.44, w, h * 0.2);
+        ctx.fillStyle = '#c8ffd0'; ctx.beginPath(); ctx.ellipse(cx, h * 0.64, s * 0.06, s * 0.02, 0, Math.PI, TAU); ctx.fill();
+        break;
+    }
     case 'shooting': {
         night(); dots(16, 420, s * 0.012, '#fff');
         const g = ctx.createLinearGradient(w * 0.2, h * 0.22, w * 0.76, h * 0.6);

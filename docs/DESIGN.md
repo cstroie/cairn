@@ -51,7 +51,7 @@ that is killed without warning is still a departure.
 
 ## The game around the pool
 
-`world.js` is pure, like the simulation. The field guide is `ALBUM`, fifty pages: life on the rocks
+`world.js` is pure, like the simulation. The field guide is `ALBUM`, fifty-two pages: life on the rocks
 by size, the Deep Ledge, the shore, under the weed, wonders. `observe` writes the pages of what is
 there to be seen; the shore creatures need a tap. `unlock` turns pages into rocks (`ROCK_AT`),
 cairn stones (`STONE_AT`) and the ledge (`LEDGE_AT`); a rock under the sand has `on: false` and is

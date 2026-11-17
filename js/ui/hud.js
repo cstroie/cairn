@@ -101,13 +101,14 @@ export class Hud {
             return;
         }
         const quiet = r.calm > 0 ? t('quiet', { d: duration(r.calm * TIDE) }) : t('quietNone');
+        const since = r.sp && r.t != null && st.last - r.t >= 2 ? ' ' + t('hereFor', { d: duration((st.last - r.t) * TIDE) }) : '';
         const life = r.sp ? `<b>${esc(cap(L().sp[r.sp]))}.</b> ${grows(r.sp) ? L().grown[stage(r.g)] + ' ' : ''}` : '';
         const deep = ledge && !exposed;
         c.innerHTML = `
             <header><h3><span>${esc(rockName(st, i))}</span><button class="ren" aria-label="${esc(t('rename'))}" title="${esc(t('rename'))}">✎</button></h3>
             <small>${esc(ledge ? t('ledgeRock') : t('rockOf', { n: i + 1, m: 10 }))}</small>${x}</header>
             <p class="what">${life}${esc(L().desc[r.sp])}</p>
-            <p class="fate">${esc(quiet)} ${esc(deep ? t('ledgeDeep') : r.cairn ? t('guarded') : t('crossed'))}</p>
+            <p class="fate">${esc(quiet)}${esc(since)} ${esc(deep ? t('ledgeDeep') : r.cairn ? t('guarded') : t('crossed'))}</p>
             <div class="two"><button class="btn cairn ${r.cairn ? 'plain' : ''}">${esc(r.cairn ? t('liftCairn') : t('placeCairn'))}</button>
             <button class="btn plain look" title="${esc(t('lookCost'))}">${esc(t('lookUnder'))}</button></div>
             <p class="note"></p>`;
@@ -167,6 +168,7 @@ export class Hud {
             e.appendChild(btn);
         }
         $('banners').appendChild(e);
+        return e;
     }
 }
 

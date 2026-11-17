@@ -8,9 +8,9 @@ import { env, minuteOf, tideOf, TIDE, LOW, springness } from '../js/core/tide.js
 const M0 = 25_000_000;
 const at = (y, mo, d, h = 0, mi = 0) => minuteOf(new Date(y, mo - 1, d, h, mi));
 
-test('the guide has fifty pages, each named once', () => {
-    assert.equal(W.ALBUM.length, 50);
-    assert.equal(new Set(W.ALBUM.map(a => a.id)).size, 50);
+test('the guide has fifty-two pages, each named once', () => {
+    assert.equal(W.ALBUM.length, 52);
+    assert.equal(new Set(W.ALBUM.map(a => a.id)).size, 52);
     assert.equal(W.UNDER.length, 6);
 });
 
