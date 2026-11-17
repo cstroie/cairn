@@ -18,15 +18,28 @@ export function drawSea(ctx, L, env, t, col) {
     ctx.fillStyle = g;
     ctx.fillRect(0, horizon, W, bottom - horizon);
 
-    const hx = W * 0.08 - L.pan * 0.05, hw = Math.max(W * 0.3, H * 0.34);
+    const ld = L.land || { side: -1, x: 0.08, w: 0.3, hgt: 1, peak: 0.45, isle: null };
+    const hx0 = W * ld.x - L.pan * 0.05, hw = Math.max(W * ld.w, H * 0.3), hh = H * 0.05 * ld.hgt;
+    const hx = ld.side < 0 ? hx0 : W - hx0;
     const land = mix([10, 14, 30], [70, 92, 104], col.light);
-    ctx.fillStyle = rgb(mix(land, col.bot, 0.35));          // the headland
+    const haze = rgb(mix(land, col.bot, 0.55));
+    if (ld.isle) {                                          // an island far out, paler in the haze
+        const ix = W * (ld.side < 0 ? ld.isle.x : 1 - ld.isle.x), iw = W * ld.isle.w, ih = H * 0.05 * ld.isle.hgt;
+        ctx.fillStyle = haze;
+        ctx.beginPath(); ctx.moveTo(ix - iw, horizon + 1);
+        ctx.bezierCurveTo(ix - iw * 0.6, horizon - ih * 0.7, ix - iw * 0.1, horizon - ih, ix + iw * 0.2, horizon - ih * 0.85);
+        ctx.bezierCurveTo(ix + iw * 0.5, horizon - ih * 0.6, ix + iw * 0.8, horizon - ih * 0.2, ix + iw, horizon + 1);
+        ctx.closePath(); ctx.fill();
+    }
+    ctx.fillStyle = rgb(mix(land, col.bot, 0.35));          // the headland, its cliff to the sea
     ctx.beginPath();
-    ctx.moveTo(hx - hw * 0.6, horizon + 1);
-    ctx.bezierCurveTo(hx - hw * 0.3, horizon - H * 0.035, hx - hw * 0.05, horizon - H * 0.05, hx + hw * 0.1, horizon - H * 0.032);
-    ctx.bezierCurveTo(hx + hw * 0.3, horizon - H * 0.02, hx + hw * 0.42, horizon - H * 0.006, hx + hw * 0.6, horizon + 1);
+    const hs = ld.side, pk = ld.peak;
+    ctx.moveTo(hx - hs * hw * 0.6, horizon + 1);
+    ctx.lineTo(hx - hs * hw * 0.6, horizon - hh * 0.5);
+    ctx.bezierCurveTo(hx - hs * hw * 0.4, horizon - hh * 0.9, hx - hs * hw * (0.3 - pk * 0.4), horizon - hh, hx + hs * hw * (pk - 0.4), horizon - hh * 0.95);
+    ctx.bezierCurveTo(hx + hs * hw * 0.25, horizon - hh * 0.55, hx + hs * hw * 0.42, horizon - hh * 0.2, hx + hs * hw * 0.6, horizon + 1);
     ctx.closePath(); ctx.fill();
-    const lx = hx + hw * 0.02, ly = horizon - H * 0.046, lh = H * 0.05;
+    const lx = hx + hs * hw * (pk - 0.42), ly = horizon - hh * 0.93, lh = H * 0.05;
     ctx.fillStyle = rgb(mix([40, 44, 60], [238, 236, 228], col.light));
     ctx.beginPath();                                        // the lighthouse
     ctx.moveTo(lx - lh * 0.11, ly); ctx.lineTo(lx - lh * 0.07, ly - lh); ctx.lineTo(lx + lh * 0.07, ly - lh); ctx.lineTo(lx + lh * 0.11, ly);
@@ -112,18 +125,26 @@ export function drawSurface(ctx, L, env, t, col) {
     ctx.clip();
     const span = L.shore - y0, wind = env.weather.wind + (env.storm ? 0.5 : 0);
     ctx.lineCap = 'round';
-    for (let j = 1; j < 18; j++) {                          // the waves, closer together far away
-        const f = j / 18, y = y0 + Math.pow(f, 1.6) * span;
-        const amp = (0.5 + 3.2 * f) * (0.4 + wind) * L.H / 700;
-        ctx.strokeStyle = rgba(mix(sky, [255, 255, 255], 0.6), (0.05 + 0.13 * f) * (0.5 + 0.5 * body));
-        ctx.lineWidth = 0.8 + 1.4 * f;
-        ctx.beginPath();
-        const k = 0.05 / (0.25 + f), run = t * (0.5 + 0.9 * f) + j * 1.9;
-        for (let x = -10; x <= W + 10; x += 10) {
-            const yy = y + amp * (Math.sin(x * k + run) + 0.5 * Math.sin(x * k * 2.3 - run * 1.3));
-            if (x === -10) ctx.moveTo(x, yy); else ctx.lineTo(x, yy);
+    for (let j = 1; j < 34; j++) {                          // ripples: short broken glints, closer together far away
+        const f = j / 34, y = y0 + Math.pow(f, 1.5) * span, s = 0.5 + f;
+        const amp = (0.4 + 2 * f) * (0.4 + wind) * L.H / 700;
+        const len = (10 + 30 * f) * (0.6 + wind * 0.6), drift = t * (6 + 22 * f) * (0.4 + wind);
+        const a = (0.04 + 0.16 * f) * (0.4 + 0.6 * body) * (0.5 + wind * 0.7);
+        for (let k = -1; k < W / len + 1; k++) {
+            const seedk = k + j * 997, life = (hash(seedk, 7) + t * (0.12 + 0.2 * wind)) % 1;
+            const fade = Math.sin(life * Math.PI);
+            if (fade < 0.25 || hash(seedk, 11) < 0.35) continue;
+            const x = k * len * 1.3 + (hash(seedk, 3) - 0.5) * len + (drift % (len * 1.3));
+            const yy = y + (hash(seedk, 5) - 0.5) * span * 0.03 + amp * Math.sin(x * 0.04 + t + j);
+            const l = len * (0.3 + 0.7 * hash(seedk, 9)) * fade;
+            ctx.strokeStyle = rgba(mix(sky, [255, 255, 255], 0.55 + 0.3 * hash(seedk, 13)), a * fade);
+            ctx.lineWidth = (0.6 + 1.2 * f) * s * 0.8;
+            ctx.beginPath(); ctx.moveTo(x - l / 2, yy); ctx.quadraticCurveTo(x, yy - amp * 0.8, x + l / 2, yy + amp * 0.2); ctx.stroke();
+            if (hash(seedk, 17) < 0.5) {                    // the dark side of the ripple
+                ctx.strokeStyle = rgba(mix(near, [0, 0, 0], 0.5), a * fade * 0.6);
+                ctx.beginPath(); ctx.moveTo(x - l * 0.4, yy + 1.4 * s); ctx.lineTo(x + l * 0.4, yy + 1.4 * s); ctx.stroke();
+            }
         }
-        ctx.stroke();
     }
     const p = lamp(L, env);                                 // the sun or the moon on the water
     const strength = (p.up ? 0.7 : 0.4 * (0.2 + 0.8 * (1 - Math.abs(env.moon - 0.5) * 2))) * (1 - env.weather.cloud * 0.8) * body;
@@ -153,16 +174,59 @@ export function drawSurface(ctx, L, env, t, col) {
     }
     ctx.restore();
 
-    ctx.lineWidth = 2.5;                                    // the edge on the sand, and its foam
-    ctx.strokeStyle = rgba(mix([150, 175, 215], [255, 255, 255], col.light), 0.8);
+    drawSwash(ctx, L, env, t, col);
+}
+
+/**
+ * The beach under the water's edge: dark wet sand the tide has just left,
+ * and the swash, a thin sheet that runs up the sand, stops, and slides
+ * back, with a lace of foam along its front.
+ */
+function drawSwash(ctx, L, env, t, col) {
+    const { W, H } = L, wind = env.weather.wind + (env.storm ? 0.5 : 0);
+    const reach = H * (0.012 + 0.03 * wind), step = 8;
+    ctx.fillStyle = rgba(mix([60, 46, 30], [120, 96, 64], col.light), 0.28);    // wet sand
     ctx.beginPath();
-    for (let x = -10; x <= W + 10; x += 12) { const y = shoreY(L, env, t, x); if (x === -10) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
-    ctx.stroke();
-    ctx.lineWidth = 6;
-    ctx.strokeStyle = rgba(mix([90, 120, 170], [230, 250, 248], col.light), 0.18);
+    for (let x = -10; x <= W + 10; x += step) ctx.lineTo(x, shoreY(L, env, t, x) - 2);
+    for (let x = W + 10; x >= -10; x -= step) ctx.lineTo(x, shoreY(L, env, t, x) + reach * 1.25 + H * 0.004 * Math.sin(x * 0.02));
+    ctx.closePath(); ctx.fill();
+
+    const P = 8, cyc = t / P;                               // the run and the backwash
+    const run = x => {
+        const ph = (cyc + 0.35 * Math.sin(x * 0.004 + 1.3) + 0.15 * Math.sin(x * 0.013)) % 1;
+        const up = ph < 0.4 ? Math.sin(ph / 0.4 * Math.PI / 2) : Math.pow(1 - (ph - 0.4) / 0.6, 1.6);
+        return { up, ph };
+    };
+    const front = [];
+    for (let x = -10; x <= W + 10; x += step) {
+        const { up, ph } = run(x), y = shoreY(L, env, t, x) + up * reach * (0.75 + 0.25 * Math.sin(x * 0.031 + 2));
+        front.push([x, y, up, ph]);
+    }
+    const water = mix([90, 120, 150], [170, 210, 214], col.light);
+    ctx.fillStyle = rgba(water, 0.3);
     ctx.beginPath();
-    for (let x = -10; x <= W + 10; x += 12) { const y = shoreY(L, env, t, x) - 5; if (x === -10) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
-    ctx.stroke();
+    for (const p of front) ctx.lineTo(p[0], shoreY(L, env, t, p[0]) - 1);
+    for (let k = front.length - 1; k >= 0; k--) ctx.lineTo(front[k][0], front[k][1]);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = rgba(mix(water, [255, 255, 255], 0.5), 0.25);            // its glassy edge
+    ctx.lineWidth = 1;
+    ctx.beginPath(); front.forEach((p, k) => (k ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]))); ctx.stroke();
+
+    const foam = mix([150, 170, 200], [250, 252, 248], col.light);              // the lace of foam
+    ctx.fillStyle = rgb(foam);
+    for (let k = 0; k < front.length - 1; k++) {
+        const [x, y, up, ph] = front[k], [x2, y2] = front[k + 1];
+        const fresh = ph < 0.4 ? 1 : 1 - (ph - 0.4) / 0.6;
+        for (let b = 0; b < 6; b++) {
+            const id = k * 6 + b, u = hash(id, 21), d = hash(id, 23);
+            if (hash(id, 29) > 0.35 + 0.5 * fresh) continue;
+            const bx = lerp(x, x2, u), by = lerp(y, y2, u) - d * d * reach * 0.5 * (0.4 + up);
+            ctx.globalAlpha = (0.25 + 0.6 * hash(id, 31)) * (0.3 + 0.7 * fresh);
+            const r = (0.6 + 1.8 * hash(id, 37)) * (1 - d * 0.5);
+            ctx.beginPath(); ctx.ellipse(bx, by, r * 1.6, r * 0.7, 0, 0, TAU); ctx.fill();
+        }
+    }
+    ctx.globalAlpha = 1;
 }
 
 /** Where the surface meets a rock that stands out of it: a bright ring around it. */
@@ -171,10 +235,13 @@ export function drawRing(ctx, R, wl, t, col) {
     for (const p of R.pts) if (p[1] < wl) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); }
     if (x1 <= x0 || wl >= R.base) return;
     const cx = (x0 + x1) / 2, rx = (x1 - x0) / 2 + 3 * R.s + Math.sin(t * 1.3 + R.i) * 1.5 * R.s;
-    ctx.strokeStyle = rgba(mix([150, 175, 215], [255, 255, 255], col.light), 0.6);
-    ctx.lineWidth = 1.6 * R.s;
+    ctx.strokeStyle = rgba(mix([150, 175, 215], [255, 255, 255], col.light), 0.5);
+    ctx.lineWidth = 1.2 * R.s;
+    ctx.setLineDash([3 * R.s, 2 * R.s, 7 * R.s, 3 * R.s]);
+    ctx.lineDashOffset = -t * 4 * R.s;
     ctx.beginPath(); ctx.ellipse(cx, wl, rx, rx * 0.2, 0, 0.05, Math.PI - 0.05); ctx.stroke();
-    ctx.strokeStyle = rgba([255, 255, 255], 0.14);
+    ctx.setLineDash([]);
+    ctx.strokeStyle = rgba([255, 255, 255], 0.08);
     ctx.lineWidth = 4 * R.s;
     ctx.beginPath(); ctx.ellipse(cx, wl, rx * 1.2, rx * 0.26, 0, 0.1, Math.PI - 0.1); ctx.stroke();
 }

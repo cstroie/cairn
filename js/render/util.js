@@ -41,3 +41,24 @@ export function smoothPath(ctx, pts, close = false, join = false) {
         ctx.lineTo(pts[n - 1][0], pts[n - 1][1]);
     }
 }
+
+/** Smooth value noise in 2D, about 0..1, from an integer seed; fbm adds octaves. */
+export function noise2(seed) {
+    const h = (x, y) => {
+        let n = (x * 374761393 + y * 668265263 + seed * 2147483647) | 0;
+        n = Math.imul(n ^ (n >>> 13), 1274126177);
+        return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
+    };
+    const n = (x, y) => {
+        const xi = Math.floor(x), yi = Math.floor(y), fx = x - xi, fy = y - yi;
+        const u = fx * fx * (3 - 2 * fx), v = fy * fy * (3 - 2 * fy);
+        const a = h(xi, yi), b = h(xi + 1, yi), c = h(xi, yi + 1), d = h(xi + 1, yi + 1);
+        return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+    };
+    n.fbm = (x, y, oct = 4) => {
+        let s = 0, amp = 0.5, f = 1, norm = 0;
+        for (let k = 0; k < oct; k++) { s += amp * n(x * f, y * f); norm += amp; amp *= 0.5; f *= 2.03; }
+        return s / norm;
+    };
+    return n;
+}

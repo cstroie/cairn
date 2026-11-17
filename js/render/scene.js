@@ -71,6 +71,10 @@ export class Scene {
             horizon: H * (tall ? 0.27 : 0.33), ridge: H * (tall ? 0.322 : 0.385),
             yFar: H * (tall ? 0.375 : 0.45), yNear: H * (tall ? 0.9 : 0.87) };
         L.floor = L.yNear;
+        const lr = seeded(this.seed * 211 + 5);                        // the land around: from the seed
+        L.land = { side: lr() < 0.5 ? -1 : 1, x: 0.04 + lr() * 0.16, w: 0.24 + lr() * 0.2, hgt: 0.6 + lr() * 0.8,
+            peak: 0.25 + lr() * 0.5, isle: lr() < 0.65 ? { x: 0.35 + lr() * 0.5, w: 0.04 + lr() * 0.08, hgt: 0.15 + lr() * 0.35 } : null,
+            rim: 0.7 + lr() * 0.9, seed: this.seed };
         L.unit = Math.min(W * 0.88 / plan.cols * 0.8, (L.yNear - L.yFar) / plan.rows * 1.3, H * 0.2);
         L.sc = d => lerp(0.62, 1.1, clamp(d));                         // how large a thing is at depth d
         L.floorY = d => lerp(L.yFar, L.yNear, Math.pow(clamp(d), 0.92));

@@ -8,7 +8,7 @@
  * The floor is drawn once into a layer; each rock is drawn once into a
  * sprite of its own, because the water and the creatures go between them.
  */
-import { clamp, lerp, mix, rgb, rgba, layer, smoothPath, TAU } from './util.js';
+import { clamp, lerp, mix, rgb, rgba, layer, smoothPath, noise2, TAU } from './util.js';
 import { seeded } from '../core/rng.js';
 
 const SAND = [226, 204, 160], SAND_DEEP = [196, 170, 122];
@@ -36,16 +36,25 @@ export function makeRock(i, L, seed, place) {
     const r = seeded(seed * 7919 + i * 104729 + 13);
     const ledge = i >= 10, s = L.sc(place.d);
     const cx = L.px(place.u, place.d), base = L.floorY(place.d);
-    const w = L.unit * (0.84 + r() * 0.26) * s;
-    const h = ledge ? L.unit * 0.085 * s * (0.9 + r() * 0.2) : L.unit * (0.5 + r() * 0.38) * s;
-    const skew = (r() - 0.5) * 0.9, round = 0.72 + r() * 0.5;
-    const ctl = Array.from({ length: 7 }, () => 0.8 + r() * 0.32);     // lumps along the top
+    // a kind of rock: [width, height, roundness of the shoulders, lean, lumpiness]
+    const KINDS = [[0.95, 0.62, 0.8, 0.5, 0.3],    // a boulder
+        [1.18, 0.36, 0.32, 0.3, 0.22],             // a slab, flat on top
+        [0.72, 0.95, 0.95, 0.6, 0.35],             // a stack, standing tall
+        [1.02, 0.6, 0.5, 1.5, 0.3],                // a tilted block
+        [1.08, 0.6, 0.7, 0.4, 0.75]];              // split in two
+    const kind = KINDS[Math.floor(r() * KINDS.length)];
+    const w = L.unit * kind[0] * (0.82 + r() * 0.36) * s;
+    const h = ledge ? L.unit * 0.085 * s * (0.9 + r() * 0.2) : L.unit * kind[1] * (0.8 + r() * 0.4) * s;
+    const skew = (r() - 0.5) * kind[3], round = kind[2] * (0.8 + r() * 0.4);
+    const ctl = Array.from({ length: 7 }, () => 1 - kind[4] * 0.5 + r() * kind[4]);   // lumps along the top
+    if (kind[4] > 0.5) ctl[2 + Math.floor(r() * 3)] *= 0.45;                          // the cleft
     const lump = u => { const f = u * 6, k = Math.min(5, Math.floor(f)), x = f - k, e = x * x * (3 - 2 * x); return lerp(ctl[k], ctl[k + 1], e); };
-    const N = 26, pts = [];
-    for (let k = 0; k <= N; k++) {
+    const nz = noise2(seed * 131 + i * 17), N = 40, pts = [];
+    for (let k = 0; k <= N; k++) {                          // weathered: lumps, then a ragged, faceted edge
         const u = k / N, a = Math.PI * (1 - u);
-        pts.push([cx + Math.cos(a) * w / 2 * (1 + (r() - 0.5) * 0.03),
-            base - Math.pow(Math.sin(a), round) * h * lump(u) * (1 + skew * (u - 0.5)) - (r() - 0.5) * h * 0.02]);
+        const rag = (nz.fbm(u * 5, 3.7, 3) - 0.5) * 0.22 + (k % 3 === 0 ? (r() - 0.5) * 0.05 : 0);
+        pts.push([cx + Math.cos(a) * w / 2 * (1 + (r() - 0.5) * 0.04),
+            base - Math.pow(Math.sin(a), round) * h * lump(u) * (1 + skew * (u - 0.5)) * (1 + rag)]);
     }
     /** A point on the top: u 0 (left) to 1 (right) -> { x, y, a } with a the angle of the surface. */
     const at = u => {
@@ -84,15 +93,6 @@ function drawRock(ctx, R) {
 
     ctx.save();
     path(); ctx.clip();
-    for (let k = 0; k < 5; k++) {                           // strata
-        const y = lerp(R.top, R.base, 0.2 + 0.16 * k + r() * 0.06);
-        ctx.strokeStyle = `rgba(20,16,24,${0.1 + r() * 0.12})`;
-        ctx.lineWidth = (1 + r() * 2.5) * R.s;
-        ctx.beginPath();
-        ctx.moveTo(R.cx - R.w * 0.6, y + (r() - 0.5) * R.h * 0.14);
-        ctx.bezierCurveTo(R.cx - R.w * 0.2, y + (r() - 0.5) * R.h * 0.22, R.cx + R.w * 0.2, y + (r() - 0.5) * R.h * 0.22, R.cx + R.w * 0.6, y + (r() - 0.5) * R.h * 0.14);
-        ctx.stroke();
-    }
     for (let k = 0; k < 70; k++) {                          // grain
         const x = R.cx + (r() - 0.5) * R.w, y = lerp(R.top, R.base + foot, r());
         ctx.fillStyle = r() < 0.5 ? `rgba(255,250,240,${r() * 0.14})` : `rgba(10,10,20,${r() * 0.16})`;
@@ -112,11 +112,6 @@ function drawRock(ctx, R) {
     ctx.fillStyle = under; ctx.fillRect(R.cx - R.w, R.base - R.h * 0.15, R.w * 2, R.h * 0.15 + foot);
     ctx.restore();
 
-    ctx.strokeStyle = 'rgba(255,248,232,0.3)';              // light along the top
-    ctx.lineWidth = 2.5 * R.s; ctx.lineCap = 'round';
-    ctx.beginPath();
-    smoothPath(ctx, R.pts.slice(3, Math.floor(R.pts.length * 0.6)).map(p => [p[0] + 1, p[1] + 2.5 * R.s]));
-    ctx.stroke();
 }
 
 /** A rock as a picture of its own: { canvas, x, y, w, h } in scene coordinates. */
@@ -125,8 +120,50 @@ export function rockSprite(R, scale) {
     const { canvas, ctx } = layer(w, h, scale);
     ctx.translate(-x, -y);
     drawRock(ctx, R);
+    weather(canvas, R, x, y, scale);
     return { canvas, x, y, w, h };
 }
+
+/**
+ * The stone itself, pixel by pixel: a rough height field lit from the upper
+ * left (facets and pits), cracks, mottled colour, lichen high up, and a dark
+ * wet band low down where the tide and the weed stain it.
+ */
+function weather(canvas, R, x0, y0, scale) {
+    const cw = canvas.width, ch = canvas.height, ctx = canvas.getContext('2d');
+    const img = ctx.getImageData(0, 0, cw, ch), px = img.data;
+    const n = noise2(R.seed), q = 1 / (R.unit * 0.3), step = 1 / scale;
+    const hf = new Float32Array(cw * ch);
+    for (let j = 0; j < ch; j++) for (let i = 0; i < cw; i++) {
+        if (px[(j * cw + i) * 4 + 3] === 0) continue;
+        const sx = x0 + i * step, sy = y0 + j * step;
+        hf[j * cw + i] = 0.55 * n.fbm(sx * q, sy * q * 1.3, 4) + 0.6 * n.fbm(sx * q * 0.35 + 40, sy * q * 0.4, 2);
+    }
+    const g = 1 / (q * step) * 0.9;
+    for (let j = 1; j < ch - 1; j++) for (let i = 1; i < cw - 1; i++) {
+        const k = j * cw + i, o = k * 4;
+        if (px[o + 3] === 0) continue;
+        const sx = x0 + i * step, sy = y0 + j * step;
+        const gx = (hf[k + 1] - hf[k - 1]) * g, gy = (hf[k + cw] - hf[k - cw]) * g;
+        let s = clamp(1 + (gx * 0.75 + gy * 0.65) * 0.5, 0.55, 1.35);
+        const cr = 1 - Math.abs(2 * n(sx * q * 1.4 + 90, sy * q * 3.2) - 1);           // cracks, along the bedding
+        if (cr > 0.94) s *= 1 - (cr - 0.94) * 7;
+        const t = clamp((R.base - sy) / R.h);                                           // 0 at the foot, 1 at the top
+        const m = n.fbm(sx * q * 0.35 + 200, sy * q * 0.35, 3) - 0.5;
+        let rr = px[o] * s * (1 + m * 0.3), gg = px[o + 1] * s * (1 + m * 0.18), bb = px[o + 2] * s * (1 - m * 0.12);
+        if (!R.ledge && t > 0.45) {                                                     // lichen and salt, high and dry
+            const l = n.fbm(sx * q * 2.2 + 300, sy * q * 2.2, 3);
+            if (l > 0.7) { const a = Math.min(0.4, (l - 0.7) * 3) * smooth01(t); rr = lerp(rr, 196, a); gg = lerp(gg, 178, a); bb = lerp(bb, 112, a); }
+        }
+        if (t < 0.32) {                                                                 // the wet band
+            const w = 1 - t / 0.32, a = w * (0.45 + 0.2 * n(sx * q * 3, sy * q * 0.8 + 70));
+            rr = lerp(rr, rr * 0.45, a); gg = lerp(gg, gg * 0.55 + 6, a); bb = lerp(bb, bb * 0.5, a);
+        }
+        px[o] = rr; px[o + 1] = gg; px[o + 2] = bb;
+    }
+    ctx.putImageData(img, 0, 0);
+}
+const smooth01 = t => { t = clamp((t - 0.45) / 0.3); return t * t * (3 - 2 * t); };
 
 /** A rock the sand still covers: a low mound, and a corner of stone. */
 function drawBuried(ctx, R) {
@@ -152,6 +189,7 @@ function drawBuried(ctx, R) {
 
 /** Draw the rim, the floor of the pool, the near sand, the shadows and the buried rocks into a layer. */
 export function buildStatic(L, rocks, on, seed, scale) {
+    scale = scale || 1;
     const { W, H } = L;
     const { canvas, ctx } = layer(W, H, scale);
     const r = seeded(seed * 13 + 3);
@@ -198,8 +236,9 @@ export function buildStatic(L, rocks, on, seed, scale) {
         ctx.closePath(); ctx.fill();
         return pts;
     };
-    rim(L.ridge, H * 0.012, [[122, 112, 104], [70, 66, 70]]);
-    const near = rim(L.ridge + (L.yFar - L.ridge) * 0.45, H * 0.014, [[100, 92, 86], [44, 46, 58]]);
+    const ra = (L.land ? L.land.rim : 1);
+    rim(L.ridge, H * 0.012 * ra, [[122, 112, 104], [70, 66, 70]]);
+    const near = rim(L.ridge + (L.yFar - L.ridge) * 0.45, H * 0.014 * ra, [[100, 92, 86], [44, 46, 58]]);
     ctx.strokeStyle = 'rgba(255,246,230,0.14)'; ctx.lineWidth = 2;
     ctx.beginPath(); smoothPath(ctx, near.map(p => [p[0], p[1] + 2])); ctx.stroke();
     for (let k = 0; k < W / 12; k++) {                      // barnacle dust and cracks on it
@@ -218,18 +257,29 @@ export function buildStatic(L, rocks, on, seed, scale) {
     ctx.moveTo(-40, H + 4);
     smoothPath(ctx, edge, false, true);
     ctx.lineTo(W + 40, H + 4); ctx.closePath(); ctx.fill();
-    for (let k = 0; k < W / 3; k++) {                       // grains, ripples, a few pebbles
+    {                                                       // the sand, grain by grain: patches, ripple marks, grit
+        const y0 = Math.floor((L.yNear - H * 0.03) * scale), cw = canvas.width, ch = canvas.height - y0;
+        const img = ctx.getImageData(0, y0, cw, ch), px = img.data, n = noise2(seed * 3 + 11);
+        let h = (seed * 2654435761) >>> 0;
+        for (let j = 0; j < ch; j++) {
+            const sy = (y0 + j) / scale, depth = clamp((sy - L.yNear) / (H - L.yNear));
+            for (let i = 0; i < cw; i++) {
+                const o = (j * cw + i) * 4, sx = i / scale;
+                h = Math.imul(h ^ (h >>> 15), 2246822507) + 0x9e3779b9 >>> 0;
+                const grit = (h / 4294967296 - 0.5) * 22;
+                const patch = (n.fbm(sx / 140, sy / 40, 3) - 0.5) * 30;
+                const rip = Math.sin(sx / (9 + depth * 10) + n.fbm(sx / 90, sy / 16, 2) * 9 + sy * 0.25) * (4 + 6 * n(sx / 200, sy / 50 + 9));
+                const v = grit + patch + rip;
+                px[o] = clamp(px[o] + v, 0, 255); px[o + 1] = clamp(px[o + 1] + v * 0.92, 0, 255); px[o + 2] = clamp(px[o + 2] + v * 0.8, 0, 255);
+            }
+        }
+        ctx.putImageData(img, 0, y0);
+    }
+    for (let k = 0; k < W / 12; k++) {                      // a few pebbles and bits of shell
         const x = r() * W, y = lerp(L.yNear + H * 0.008, H, r());
         ctx.fillStyle = r() < 0.5 ? `rgba(255,248,225,${r() * 0.3})` : `rgba(110,84,50,${r() * 0.2})`;
         ctx.fillRect(x, y, 1 + r() * 1.6, 1 + r() * 1.2);
     }
-    ctx.lineWidth = 1.5;
-    for (let k = 0; k < W / 90; k++) {
-        const x = r() * W, y = lerp(L.yNear + H * 0.03, H * 0.99, r()), w = 30 + r() * 80;
-        ctx.strokeStyle = `rgba(140,112,70,${0.08 + r() * 0.1})`;
-        ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + w / 2, y - 4 - r() * 5, x + w, y + (r() - 0.5) * 4); ctx.stroke();
-    }
-
     for (const R of rocks) {
         if (!on[R.i]) { if (!R.ledge) drawBuried(ctx, R); continue; }
         ctx.fillStyle = 'rgba(14,14,26,0.3)';               // the shadow it casts on the floor

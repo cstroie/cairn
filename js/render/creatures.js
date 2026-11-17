@@ -126,14 +126,14 @@ function mussels(ctx, R, g, t, S) {
         ctx.save();
         ctx.translate(p.x, p.y + s * 0.25 + depth * s * 0.5); ctx.rotate(p.a + (tilt - 0.5) * 1.3);
         const gr = ctx.createLinearGradient(-s * 0.5, -s, s * 0.5, 0);
-        gr.addColorStop(0, '#5a6a94'); gr.addColorStop(0.4, '#2a3050'); gr.addColorStop(1, '#12152a');
+        gr.addColorStop(0, '#4c5468'); gr.addColorStop(0.35, '#23262f'); gr.addColorStop(1, '#0d0d12');
         ctx.fillStyle = gr;
         ctx.beginPath();
         ctx.moveTo(0, s * 0.1);
         ctx.bezierCurveTo(-s * 0.72, -s * 0.1, -s * 0.56, -s * 1.2, 0, -s * 1.4);
         ctx.bezierCurveTo(s * 0.5, -s * 1.2, s * 0.56, -s * 0.2, 0, s * 0.1);
         ctx.fill();
-        ctx.strokeStyle = 'rgba(190,206,240,0.32)'; ctx.lineWidth = 1.2;
+        ctx.strokeStyle = 'rgba(200,210,226,0.22)'; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(-s * 0.3, -s * 0.2); ctx.quadraticCurveTo(-s * 0.42, -s * 0.9, -s * 0.06, -s * 1.22); ctx.stroke();
         if (wet > 0.5 && S.poke < 0.2) {                           // open a crack to feed
             ctx.strokeStyle = `rgba(240,160,90,${0.6 * wet * (0.6 + 0.4 * Math.sin(t * 1.3 + u * 30))})`;
@@ -144,7 +144,7 @@ function mussels(ctx, R, g, t, S) {
     }
 }
 
-const ANEMONE = [[[214, 84, 108], [255, 190, 200]], [[226, 124, 60], [255, 220, 170]], [[108, 180, 120], [220, 250, 200]], [[186, 104, 200], [240, 200, 250]]];
+const ANEMONE = [[[150, 34, 42], [220, 120, 120]], [[176, 104, 64], [236, 200, 160]], [[96, 132, 90], [200, 220, 170]], [[140, 92, 120], [220, 186, 206]]];   // beadlet red, strawberry-brown, snakelocks green, plumose mauve
 
 function anemone(ctx, R, g, t, S) {
     const r = seeded(R.seed + 505);
@@ -154,7 +154,7 @@ function anemone(ctx, R, g, t, S) {
     const [body, tip] = ANEMONE[Math.floor(r() * 4)];
     ctx.save();
     ctx.translate(p.x, p.y + s * 0.12);
-    const n = 16 + stage(g) * 5;
+    const n = 26 + stage(g) * 8;
     ctx.lineCap = 'round';
     const tentacles = front => {
         for (let k = 0; k < n; k++) {
@@ -169,7 +169,7 @@ function anemone(ctx, R, g, t, S) {
             gr.addColorStop(0, rgb(mix(body, [40, 20, 30], front ? 0 : 0.25)));
             gr.addColorStop(1, rgb(tip));
             ctx.strokeStyle = gr;
-            ctx.lineWidth = s * 0.11;
+            ctx.lineWidth = s * 0.075;
             ctx.beginPath(); ctx.moveTo(bx, by);
             ctx.quadraticCurveTo(bx + Math.cos(a) * len * 0.5, by + Math.sin(a) * len * 0.5 - s * 0.14 * open, ex, ey);
             ctx.stroke();
@@ -200,7 +200,7 @@ function seaStar(ctx, R, g, t, S) {
     ctx.save();
     ctx.translate(p.x, p.y + s * 0.1); ctx.rotate(p.a + Math.sin(t * 0.05) * 0.3 + S.poke * 0.5); ctx.scale(1 - 0.14 * S.poke, 0.72 * (1 - 0.14 * S.poke));
     const gr = ctx.createRadialGradient(0, 0, 0, 0, 0, s);
-    gr.addColorStop(0, '#f6b25c'); gr.addColorStop(1, '#d4502c');
+    gr.addColorStop(0, '#d9904e'); gr.addColorStop(0.7, '#b65a2e'); gr.addColorStop(1, '#8a3a1e');
     ctx.fillStyle = gr;
     ctx.beginPath();
     for (let k = 0; k < 5; k++) {
@@ -212,11 +212,11 @@ function seaStar(ctx, R, g, t, S) {
         ctx.quadraticCurveTo(Math.cos(a + 0.12) * s * 0.8, Math.sin(a + 0.12) * s * 0.8, Math.cos(a1) * s * 0.36, Math.sin(a1) * s * 0.36);
     }
     ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = 'rgba(120,30,20,0.35)'; ctx.lineWidth = 1.2; ctx.stroke();
-    ctx.fillStyle = 'rgba(255,236,200,0.8)';
+    ctx.strokeStyle = 'rgba(70,20,10,0.4)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = 'rgba(246,222,186,0.55)';
     for (let k = 0; k < 5; k++) {
         const a = -Math.PI / 2 + k * TAU / 5;
-        for (let d = 0.2; d < 0.9; d += 0.17) { ctx.beginPath(); ctx.arc(Math.cos(a) * s * d, Math.sin(a) * s * d, s * 0.035, 0, TAU); ctx.fill(); }
+        for (let d = 0.15; d < 0.9; d += 0.07) { const o = (r() - 0.5) * s * 0.12 * (1 - d); ctx.beginPath(); ctx.arc(Math.cos(a) * s * d - Math.sin(a) * o, Math.sin(a) * s * d + Math.cos(a) * o, s * (0.012 + r() * 0.022), 0, TAU); ctx.fill(); }
     }
     ctx.restore();
 }
@@ -273,13 +273,13 @@ function urchin(ctx, R, g, t, S) {
     for (let k = 0; k < 34; k++) {
         const a = Math.PI * (0.92 + 1.16 * k / 33) + Math.sin(t * 0.9 + k * 1.3) * 0.07;
         const len = s * (1.5 + 0.5 * ((k * 5) % 7) / 7) * (1 + 0.3 * S.poke);
-        ctx.strokeStyle = k % 3 ? '#4a2a6a' : '#7a4a9e';
+        ctx.strokeStyle = k % 3 ? '#3a2e3c' : '#6a5070';
         ctx.lineWidth = s * 0.07;
         ctx.beginPath(); ctx.moveTo(Math.cos(a) * s * 0.7, Math.sin(a) * s * 0.7);
         ctx.lineTo(Math.cos(a) * len, Math.sin(a) * len); ctx.stroke();
     }
     const gr = ctx.createRadialGradient(-s * 0.3, -s * 0.3, 0, 0, 0, s);
-    gr.addColorStop(0, '#8d5cae'); gr.addColorStop(1, '#2e1846');
+    gr.addColorStop(0, '#6e5872'); gr.addColorStop(1, '#221a26');
     ctx.fillStyle = gr;
     ctx.beginPath(); ctx.ellipse(0, 0, s, s * 0.86, 0, 0, TAU); ctx.fill();
     ctx.restore();
@@ -292,7 +292,7 @@ function sponge(ctx, R, g, t, S) {
     for (const [u, sz, d] of list) {
         const p = R.at(u), s = R.w * (0.07 + 0.07 * sz) * size(g);
         const gr = ctx.createRadialGradient(p.x - s * 0.3, p.y - s * 0.5, s * 0.1, p.x, p.y, s * 1.2);
-        gr.addColorStop(0, '#ffd27a'); gr.addColorStop(0.6, '#e9952f'); gr.addColorStop(1, '#a85a18');
+        gr.addColorStop(0, '#e8c27a'); gr.addColorStop(0.6, '#c98a3c'); gr.addColorStop(1, '#8a5420');
         ctx.fillStyle = gr;
         ctx.beginPath(); ctx.ellipse(p.x, p.y - s * 0.2 + d * s * 0.3, s * 1.15, s * 0.8, p.a, 0, TAU); ctx.fill();
         ctx.fillStyle = 'rgba(70,30,8,0.75)';                      // the holes it breathes out of
