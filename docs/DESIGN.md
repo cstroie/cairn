@@ -100,5 +100,5 @@ saved. `node tools/shot.js <dir>` takes pictures of a set of such moments.
 
 ## Publishing
 
-`.github/workflows/pages.yml` tests, copies the app (not the tools or tests) and deploys it to
-the `gh-pages` branch on every push to `main`; GitHub Pages serves that branch.
+`.github/workflows/pages.yml` tests, copies the app (not the tools or tests) and deploys it as a GitHub Pages
+artifact on every push to `main` (Pages source: GitHub Actions).
