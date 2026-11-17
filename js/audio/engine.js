@@ -2,7 +2,8 @@
  * engine.js: the sounds of the shore, all synthesized (no sound files).
  *
  *   unlock()            call from a tap or a key: browsers start audio only then
- *   setEnv(env, swell)  each frame: wind, rain, how deep the water, the wave
+ *   setEnv(env, swell, land)  each frame: wind, rain, how deep the water, the wave,
+ *                       and the voices of the shore (cicadas, palms, a foghorn, pebbles)
  *   bell()              the tide bell
  *   chime(n)            a small rising figure: something happened
  *   plop(), click()     small sounds for the hand
@@ -58,10 +59,44 @@ export class Audio {
         this.wind = voice('bandpass', 420, 1.6);
         this.rain = voice('highpass', 3800, 0.4);
         this.deep = voice('lowpass', 130, 0.8);
+        this.rustle = voice('bandpass', 5200, 0.7);         // palm leaves in the wind
+        this.noise = buf;
+        const cic = ctx.createOscillator(), cicF = ctx.createBiquadFilter(), cicG = ctx.createGain(), am = ctx.createOscillator(), amG = ctx.createGain();
+        cic.type = 'square'; cic.frequency.value = 4400;     // cicadas: a high buzz, pulsing
+        cicF.type = 'bandpass'; cicF.frequency.value = 4800; cicF.Q.value = 3;
+        am.frequency.value = 38; amG.gain.value = 0.5;
+        const pulse = ctx.createGain(); pulse.gain.value = 0.5;
+        am.connect(amG).connect(pulse.gain);
+        cicG.gain.value = 0;
+        cic.connect(cicF).connect(pulse).connect(cicG).connect(this.master);
+        cic.start(); am.start();
+        this.cicada = { g: cicG };
+        this.lastSwell = 0; this.lastHorn = -60; this.lastGull = 0;
+    }
+
+    /** The backwash dragging pebbles: a rattle of small clicks. */
+    pebbles(vol) {
+        const ctx = this.ctx, now = ctx.currentTime;
+        for (let i = 0; i < 40; i++) {
+            const at = now + Math.random() * 1.4 * (i / 40 + 0.2), src = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+            src.buffer = this.noise; f.type = 'bandpass'; f.frequency.value = 1800 + Math.random() * 3000; f.Q.value = 6;
+            g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(vol * (0.3 + Math.random() * 0.7), at + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, at + 0.04);
+            src.connect(f).connect(g).connect(this.master);
+            src.start(at, Math.random() * 3); src.stop(at + 0.06);
+        }
+    }
+
+    /** A foghorn far off: a low, long, two-note groan. */
+    horn() {
+        const ctx = this.ctx, now = ctx.currentTime, f = ctx.createBiquadFilter(), g = ctx.createGain();
+        f.type = 'lowpass'; f.frequency.value = 500;
+        g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(0.09, now + 0.4); g.gain.setValueAtTime(0.09, now + 2.2); g.gain.linearRampToValueAtTime(0, now + 3.2);
+        f.connect(g).connect(this.master);
+        for (const hz of [98, 98.7, 147]) { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = hz; o.connect(f); o.start(now); o.stop(now + 3.3); }
     }
 
     /** swell: 0..1, the breathing of the waves, the same as the picture's. */
-    setEnv(env, swell) {
+    setEnv(env, swell, land) {
         if (!this.ctx || !this.enabled) return;
         const now = this.ctx.currentTime, w = env.weather;
         const set = (v, x) => v.g.gain.setTargetAtTime(x, now, 0.25);
@@ -73,6 +108,13 @@ export class Audio {
         this.wind.f.frequency.setTargetAtTime(320 + 500 * w.wind + 120 * Math.sin(now * 0.21), now, 0.5);
         set(this.rain, 0.07 * w.rain);
         set(this.deep, 0.12 * env.level);
+        const kind = land && land.kind, day = env.sun.up && env.sun.alt > 0.15 && w.rain < 0.2;
+        set(this.cicada, kind === 'aegean' && day && env.season === 2 ? 0.012 * (0.6 + 0.4 * Math.sin(now * 0.4) * Math.sin(now * 0.17)) : 0);
+        set(this.rustle, kind === 'tropic' ? 0.015 + 0.07 * w.wind * (0.6 + 0.4 * Math.sin(now * 0.8)) : 0);
+        if (land && land.beach !== 'sand' && this.lastSwell > 0.62 && swell <= 0.62 && env.level < 0.85) this.pebbles(0.05 + 0.05 * w.wind);
+        this.lastSwell = swell;
+        if (kind === 'north' && w.fog > 0.4 && now - this.lastHorn > 38) { this.lastHorn = now; this.horn(); }
+        if ((kind === 'north' || kind === 'cove') && env.sun.up && w.rain < 0.4 && now - this.lastGull > 9 && Math.random() < 0.004) { this.lastGull = now; this.gull(); }
     }
 
     tone(freq, at, dur, vol, type = 'sine') {

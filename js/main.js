@@ -273,7 +273,7 @@ function frame(ms) {
         things = world.surprises(e);
     } else if (rate !== 1) e = env = envOf(nowM(), st.lastStorm);
     scene.draw(e, rocks, time, { sel, names: nameList, about: things, beach });
-    audio.setEnv(e, 0.5 + 0.5 * Math.sin(time * 1.1));
+    audio.setEnv(e, 0.5 + 0.5 * Math.sin(time * 1.1), scene.L && scene.L.land);
 }
 
 /* ---------- the hands ---------- */

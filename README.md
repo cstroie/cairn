@@ -26,7 +26,15 @@ Choose. Then go away for a while.
 - **A field guide to fill.** Fifty-two pages: what grows on the rocks, seals and dolphins out at
   sea, waders and a heron at dawn, what hides under the weed, the green flash at sunset, a message
   in a bottle. Each page you find uncovers another rock or washes up another stone.
-- **A journal** of what happened while you were gone: storms, arrivals, losses.
+- **A journal** of what happened while you were gone: storms, arrivals, losses. You can
+  watch the pool's last weeks again, a day a beat, and each rock remembers how long its life
+  has been there.
+- **Four kinds of shore**, chosen by your pool: a northern headland, an Aegean cape, coral
+  islets with palms, a rocky cove. Each has its own sand, pebbles or shingle, its own sea and
+  its own sounds: cicadas, palm leaves, a foghorn, pebbles dragged by the backwash.
+- **Light of the moment.** Long shadows at dusk, nets of sunlight on the floor, reflections on
+  calm water, rocks shining in the rain, the Milky Way on a dark night.
+- **A postcard** of your pool as it is now, and the date of the next great low water.
 - **Made in code.** Every rock, wave, creature and sound is drawn or synthesized as it runs.
   There are no image or sound files.
 - **Installable and offline.** A PWA for phone or desktop that updates itself. A low-water
