@@ -9,7 +9,7 @@
  * surface over all of it; then, far to near again, the part of each rock
  * that stands out of the water; names, weather, grain.
  */
-import { clamp, lerp, rgba, layer } from './util.js';
+import { clamp, lerp, mix, rgba, layer } from './util.js';
 import { skyColours, drawSky, drawWeather } from './sky.js';
 import { drawSea, drawSurface, drawRing } from './water.js';
 import { places, makeRock, rockSprite, buildStatic, drawCairn } from './rocks.js';
@@ -141,10 +141,13 @@ export class Scene {
             if (under && wl < R.base) {                                 // the deeper under water, the bluer and dimmer
                 const depth = clamp((R.base - wl) / (R.unit * 0.9));
                 const g = ctx.createLinearGradient(0, Math.max(wl, R.top), 0, R.base + R.w * 0.13);
-                g.addColorStop(0, rgba(deepTint, 0.12 + 0.2 * depth));
-                g.addColorStop(1, rgba(deepTint, 0.3 + 0.42 * depth));
+                const wash = mix([70, 120, 140], [120, 182, 186], col.light);   // water filters the light: multiply, so the stone still shows
+                g.addColorStop(0, rgba(wash, 0.35 + 0.25 * depth));
+                g.addColorStop(1, rgba(mix(wash, deepTint, 0.5), 0.55 + 0.35 * depth));
                 ctx.save(); ctx.clip(R.body);
+                ctx.globalCompositeOperation = 'multiply';
                 ctx.fillStyle = g; ctx.fillRect(sp.x, Math.max(wl, R.top) - 1, sp.w, sp.h);
+                ctx.globalCompositeOperation = 'source-over';
                 if (col.light > 0.4) {                                  // and the light of the waves plays on it
                     ctx.globalCompositeOperation = 'lighter';
                     ctx.strokeStyle = `rgba(190,255,235,${0.1 * depth * (col.light - 0.4)})`; ctx.lineWidth = 2 * R.s;

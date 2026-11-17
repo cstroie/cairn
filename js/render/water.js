@@ -31,15 +31,17 @@ export function drawSea(ctx, L, env, t, col) {
         ctx.bezierCurveTo(ix + iw * 0.5, horizon - ih * 0.6, ix + iw * 0.8, horizon - ih * 0.2, ix + iw, horizon + 1);
         ctx.closePath(); ctx.fill();
     }
-    ctx.fillStyle = rgb(mix(land, col.bot, 0.35));          // the headland, its cliff to the sea
+    ctx.fillStyle = rgb(mix(land, col.bot, 0.35));          // the headland: a long slope inland, a cliff to the sea
+    const hs = ld.side, c = -0.15 + 0.3 * ld.peak;          // v: across the headland, positive towards the open sea
+    const prof = v => {
+        const d = (v - c) / (v < c ? 0.75 : 0.2);
+        return Math.max(0, 1 - d * d) * (1 + 0.06 * Math.sin(v * 23 + ld.peak * 9) + 0.04 * Math.sin(v * 51));
+    };
     ctx.beginPath();
-    const hs = ld.side, pk = ld.peak;
-    ctx.moveTo(hx - hs * hw * 0.6, horizon + 1);
-    ctx.lineTo(hx - hs * hw * 0.6, horizon - hh * 0.5);
-    ctx.bezierCurveTo(hx - hs * hw * 0.4, horizon - hh * 0.9, hx - hs * hw * (0.3 - pk * 0.4), horizon - hh, hx + hs * hw * (pk - 0.4), horizon - hh * 0.95);
-    ctx.bezierCurveTo(hx + hs * hw * 0.25, horizon - hh * 0.55, hx + hs * hw * 0.42, horizon - hh * 0.2, hx + hs * hw * 0.6, horizon + 1);
+    ctx.moveTo(hx - hs * 1.2 * hw, horizon + 1);
+    for (let k = 0; k <= 60; k++) { const v = -1.2 + k / 60 * 1.7; ctx.lineTo(hx - hs * v * hw, horizon + 1 - hh * prof(v)); }
     ctx.closePath(); ctx.fill();
-    const lx = hx + hs * hw * (pk - 0.42), ly = horizon - hh * 0.93, lh = H * 0.05;
+    const lv = c - 0.08, lx = hx - hs * lv * hw, ly = horizon + 3 - hh * prof(lv), lh = H * 0.05;
     ctx.fillStyle = rgb(mix([40, 44, 60], [238, 236, 228], col.light));
     ctx.beginPath();                                        // the lighthouse
     ctx.moveTo(lx - lh * 0.11, ly); ctx.lineTo(lx - lh * 0.07, ly - lh); ctx.lineTo(lx + lh * 0.07, ly - lh); ctx.lineTo(lx + lh * 0.11, ly);
@@ -115,9 +117,9 @@ export function drawSurface(ctx, L, env, t, col) {
     const far = mix(mix([14, 40, 70], [60, 150, 176], col.light), sky, 0.35);
     const near = mix([10, 44, 66], [64, 170, 172], col.light);
     const g = ctx.createLinearGradient(0, y0, 0, L.shore);
-    g.addColorStop(0, rgba(far, 0.66 * body));
-    g.addColorStop(0.4, rgba(mix(far, near, 0.6), 0.52 * body));
-    g.addColorStop(1, rgba(near, 0.32 * body));
+    g.addColorStop(0, rgba(far, 0.55 * body));
+    g.addColorStop(0.4, rgba(mix(far, near, 0.6), 0.4 * body));
+    g.addColorStop(1, rgba(near, 0.22 * body));
     ctx.fillStyle = g;
     ctx.fill();
 
