@@ -184,15 +184,16 @@ export function drawOverhang(ctx, L, env, t, col) {
             ctx.strokeStyle = rgb(mix(dark, [20, 30, 10], 0.3)); ctx.lineWidth = s * 0.006;
             ctx.beginPath(); pts.forEach((p, k) => (k ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]))); ctx.stroke();
             ctx.strokeStyle = rgb(dark); ctx.lineWidth = s * 0.007;
+            ctx.beginPath();                                // the leaflets of a frond in one stroke
             for (let k = 2; k < pts.length; k++) {
                 const [px, py] = pts[k], l = len * 0.26 * Math.sin(Math.PI * k / 16) + len * 0.04;
                 for (const side of [-1, 1]) {
                     const da = Math.PI / 2 + side * 0.55 + sway(k + f, 3) * 6;
-                    ctx.beginPath(); ctx.moveTo(px, py);
+                    ctx.moveTo(px, py);
                     ctx.quadraticCurveTo(px + side * l * 0.3, py + l * 0.3, px + side * Math.cos(da) * l * 0.6, py + Math.sin(da) * l);
-                    ctx.stroke();
                 }
             }
+            ctx.stroke();
         }
     } else {                                                // a bough: bark, twigs, and needles or nothing
         const len = s * (0.3 + r() * 0.15), sag = 0.25 + r() * 0.2, pts = [];
@@ -215,13 +216,15 @@ export function drawOverhang(ctx, L, env, t, col) {
         }
         if (ld.overhang === 'pine') {
             ctx.strokeStyle = rgb(dark); ctx.lineWidth = Math.max(1, s * 0.0028);
+            ctx.beginPath();                                // all the needles in one stroke
             for (const [px, py, ex, ey] of twigs.concat(pts.filter((_, k) => k > 6 && k % 2).map(p => [p[0], p[1], p[0], p[1]]))) {
                 for (let n = 0; n < 34; n++) {               // tufts of needles along the twig and at its tip
                     const u = n < 22 ? n / 22 : 1, cx = lerp(px, ex, u), cy = lerp(py, ey, u);
                     const a = r() * TAU, l = s * (0.012 + r() * 0.016) * (n < 22 ? 0.8 : 1.2);
-                    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a) * l, cy + Math.sin(a) * l * 0.7 + l * 0.3); ctx.stroke();
+                    ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a) * l, cy + Math.sin(a) * l * 0.7 + l * 0.3);
                 }
             }
+            ctx.stroke();
         }
     }
     ctx.restore();

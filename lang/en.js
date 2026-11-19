@@ -161,6 +161,7 @@ export default {
     settings: 'Settings',
     language: 'Language', sound: 'Sound', bell: 'Tide bell',
     bellSub: 'Rings when the tide turns and at low water.',
+    quality: 'Picture', qualitySub: 'Lighter on older phones and laptops.', qAuto: 'Automatic', qHigh: 'Finest', qMedium: 'Balanced', qLow: 'Lightest',
     on: 'on', off: 'off',
     newPool: 'Start a new pool', newPoolAsk: 'Leave this pool for ever and start a new one?', yes: 'Yes, a new pool', no: 'No',
     version: 'Version', checkUpdate: 'Look for a new version', install: 'Install',

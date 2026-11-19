@@ -162,6 +162,7 @@ export default {
     settings: 'Setări',
     language: 'Limbă', sound: 'Sunet', bell: 'Clopotul mareei',
     bellSub: 'Bate când se schimbă mareea și la maree joasă.',
+    quality: 'Imagine', qualitySub: 'Mai ușoară pe telefoane și laptopuri mai vechi.', qAuto: 'Automat', qHigh: 'Cea mai fină', qMedium: 'Echilibrată', qLow: 'Cea mai ușoară',
     on: 'pornit', off: 'oprit',
     newPool: 'Începe o baltă nouă', newPoolAsk: 'Părăsești balta aceasta pentru totdeauna și începi una nouă?', yes: 'Da, o baltă nouă', no: 'Nu',
     version: 'Versiune', checkUpdate: 'Caută o versiune nouă', install: 'Instalează',

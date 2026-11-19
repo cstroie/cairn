@@ -17,6 +17,7 @@ import { Audio } from './audio/engine.js';
 import { Hud, rockName, fmtClock, tideWords } from './ui/hud.js';
 import * as panels from './ui/panels.js';
 import * as pwa from './pwa.js';
+import { Q, setQuality, measure } from './render/quality.js';
 import { setLang, sentence, t, L, lang } from './i18n.js';
 
 const params = new URLSearchParams(location.search);
@@ -127,6 +128,7 @@ async function setting(key, value) {
     }
     st.settings[key] = value;
     if (key === 'sound') { audio.enabled = value; if (value) audio.unlock(); audio.setEnabled(value); }
+    if (key === 'quality') setQuality(value);
     if (key === 'lang') { setLang(value); hud.build(); refresh(); panels.settings(st, settingsHooks()); }
     if (key === 'alert' || key === 'lang') alertPrefs();
     persist();
@@ -237,12 +239,20 @@ const showPeek = () => hud.peek(peek && { off: peek.off, play: peek.play, label:
 
 const still = matchMedia('(prefers-reduced-motion: reduce)');
 const ease = k => k * k * (3 - 2 * k);
-let lastFrame = 0;
+let lastAudio = 0, lastFrame = 0, busyUntil = 0, dirty = true;
+/** Something moves fast for a while (a tap, a toast): draw smoothly till then. */
+const busy = (s = 2.5) => { busyUntil = Math.max(busyUntil, performance.now() + s * 1000); dirty = true; };
 function frame(ms) {
     requestAnimationFrame(frame);
     if (document.hidden) return;
-    if (still.matches && ms - lastFrame < 250) return;
-    const dt = Math.min(0.1, (ms - lastFrame) / 1000);
+    if (panels.isOpen() && !dirty) return;                      // the sheet covers the pool: leave it as it was
+    const fast = lapse || replay || (peek && peek.play) || ms < busyUntil;
+    const fps = still.matches ? 4 : fast ? (Q.fx ? 30 : 20) : Q.fps;
+    const gap = ms - lastFrame;
+    if (gap < 1000 / fps - 4) return;
+    if (!fast && !still.matches && !dirty) measure(gap, ms, 1000 / fps);
+    dirty = false;
+    const dt = Math.min(0.1, gap / 1000);
     lastFrame = ms;
     time = ms / 1000;
     let e = env, rocks = st.rocks, things = about, beach = st.beach;
@@ -273,7 +283,7 @@ function frame(ms) {
         things = world.surprises(e);
     } else if (rate !== 1) e = env = envOf(nowM(), st.lastStorm);
     scene.draw(e, rocks, time, { sel, names: nameList, about: things, beach });
-    audio.setEnv(e, 0.5 + 0.5 * Math.sin(time * 1.1), scene.L && scene.L.land);
+    if (time - lastAudio > 0.25) { lastAudio = time; audio.setEnv(e, 0.5 + 0.5 * Math.sin(time * 1.1), scene.L && scene.L.land); }
 }
 
 /* ---------- the hands ---------- */
@@ -301,7 +311,7 @@ function tapThing(h) {
 
 let drag = null;
 canvas.addEventListener('pointerdown', e => {
-    audio.unlock();
+    audio.unlock(); busy();
     drag = { x: e.clientX, y: e.clientY, moved: false };
     canvas.setPointerCapture(e.pointerId);
 });
@@ -322,6 +332,7 @@ canvas.addEventListener('pointerup', drop);
 canvas.addEventListener('pointercancel', drop);
 
 addEventListener('keydown', e => {
+    busy();
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.metaKey || e.ctrlKey || e.altKey) return;
     audio.unlock();
     const k = e.key.toLowerCase();
@@ -373,12 +384,13 @@ function armAlert() {
 
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) { persist(); armAlert(); }
-    else { clearTimeout(alertTimer); comeBack(false); }
+    else { clearTimeout(alertTimer); dirty = true; comeBack(false); }
 });
 addEventListener('pagehide', persist);
-addEventListener('resize', () => { scene.resize(); if (sel >= 0) hud.showCard(sel, st, scene.exposed(sel)); });
+addEventListener('resize', () => { scene.resize(); dirty = true; if (sel >= 0) hud.showCard(sel, st, scene.exposed(sel)); });
 setInterval(() => { if (!document.hidden) persist(); }, 30000);
 
+setQuality(params.get('quality') || st.settings.quality, () => { scene.resize(); dirty = true; });
 scene.setPool(st.seed, st.rocks.map(r => r.on));
 scene.resize();
 comeBack(true);

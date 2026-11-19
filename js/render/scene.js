@@ -7,17 +7,30 @@
  * A frame: sky, sea, the still layer (rim, floor, sand); the rocks from
  * far to near with their cairns and what lives on them; what swims; the
  * surface over all of it; then, far to near again, the part of each rock
- * that stands out of the water; names, weather, grain.
+ * that stands out of the water; names, weather. (The grain is a CSS layer over the canvas.)
  */
 import { clamp, lerp, mix, rgba, layer } from './util.js';
+import { seeded } from '../core/rng.js';
+import { Q } from './quality.js';
 import { skyColours, drawSky, drawWeather, lamp } from './sky.js';
 import { drawSea, drawSurface, drawRing } from './water.js';
 import { places, makeRock, rockSprite, buildStatic, drawCairn } from './rocks.js';
 import { drawCreature } from './creatures.js';
 import { drawFar, drawPool, drawOver, drawBeach } from './ambient.js';
-import { seeded } from '../core/rng.js';
 import { makeLand, drawOverhang } from './land.js';
 import { drawCaustics, drawReflection, drawWet, drawSpray, drawCrab } from './fx.js';
+
+/** The grain of the picture, drawn once into a CSS layer over the canvas, so it costs nothing a frame. */
+function grain() {
+    const el = document.getElementById('grain');
+    if (!el) return;
+    const g = layer(160, 160), r = seeded(4);
+    for (let i = 0; i < 2600; i++) {
+        g.ctx.fillStyle = r() < 0.5 ? `rgba(255,255,255,${r() * 0.045})` : `rgba(0,0,0,${r() * 0.045})`;
+        g.ctx.fillRect(r() * 160, r() * 160, 1 + r() * 1.5, 1 + r() * 1.5);
+    }
+    el.style.backgroundImage = `url(${g.canvas.toDataURL()})`;
+}
 
 const smooth = x => { x = clamp(x); return x * x * (3 - 2 * x); };
 
@@ -30,10 +43,10 @@ export class Scene {
         this.L = null;
         this.rocks = [];
         this.order = [];
-        this.grain = null;
         this.hits = [];
         this.poke = { i: -1, at: -9 };
         this.prints = { rocks: [], at: -99 };
+        grain();
     }
 
     /** The pool to draw: its seed, and which rocks lie bare. Rebuilds the still layer when either changes. */
@@ -65,7 +78,7 @@ export class Scene {
     resize() {
         const W = this.canvas.clientWidth, H = this.canvas.clientHeight;
         if (!W || !H) return;
-        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        const dpr = Math.min(Q.dpr, window.devicePixelRatio || 1);
         this.dpr = dpr;
         this.canvas.width = Math.round(W * dpr);
         this.canvas.height = Math.round(H * dpr);
@@ -88,14 +101,6 @@ export class Scene {
         this.sprites = this.rocks.map(R => (this.on[R.i] ? rockSprite(R, dpr) : null));
         this.scale = dpr;
         this.still = buildStatic(L, this.rocks, this.on, this.seed, dpr);
-        if (!this.grain) {
-            const g = layer(160, 160), r = seeded(4);
-            for (let i = 0; i < 2600; i++) {
-                g.ctx.fillStyle = r() < 0.5 ? `rgba(255,255,255,${r() * 0.045})` : `rgba(0,0,0,${r() * 0.045})`;
-                g.ctx.fillRect(r() * 160, r() * 160, 1 + r() * 1.5, 1 + r() * 1.5);
-            }
-            this.grain = this.ctx.createPattern(g.canvas, 'repeat');
-        }
     }
 
     /** The rock under a point of the view (near rocks first), or -1. */
@@ -138,10 +143,10 @@ export class Scene {
         const sunAt = lamp(L, env), alt = env.sun.alt, clear = 1 - env.weather.cloud * 0.75;
         const sunK = env.sun.up ? clear * (0.35 + 0.65 * smooth(1 - alt)) : 0.12 * clear * (1 - Math.abs(env.moon - 0.5) * 2);
         const warm = env.sun.up ? mix([255, 250, 236], [255, 160, 90], smooth(1 - alt * 1.6)) : [170, 190, 255];
-        drawCaustics(ctx, L, env, t, env.sun.up ? sunK : 0);
+        if (Q.fx) drawCaustics(ctx, L, env, t, env.sun.up ? sunK : 0);
         const lit = R => {                                              // the light of the moment on a rock: its sun side, its far side
             const dx = clamp((sunAt.x - R.cx) / (L.W * 0.45), -1, 1);
-            if (sunK < 0.02) return;
+            if (sunK < 0.02 || !Q.fx) return;
             ctx.save(); ctx.clip(R.body);
             const x0 = R.cx + dx * R.w * 0.55, x1 = R.cx - dx * R.w * 0.55;
             const g = ctx.createLinearGradient(x0, R.top, x1, R.base);
@@ -175,7 +180,7 @@ export class Scene {
                 ctx.globalCompositeOperation = 'multiply';
                 ctx.fillStyle = g; ctx.fillRect(sp.x, Math.max(wl, R.top) - 1, sp.w, sp.h);
                 ctx.globalCompositeOperation = 'source-over';
-                if (col.light > 0.4) {                                  // and the light of the waves plays on it
+                if (col.light > 0.4 && Q.fx > 1) {                      // and the light of the waves plays on it
                     ctx.globalCompositeOperation = 'lighter';
                     ctx.strokeStyle = `rgba(190,255,235,${0.1 * depth * (col.light - 0.4)})`; ctx.lineWidth = 2 * R.s;
                     for (let k = 0; k < 4; k++) {
@@ -196,7 +201,7 @@ export class Scene {
         env.glow = ui.about.has('glow');
         drawSurface(ctx, L, env, t, col);
         const body = clamp(0.2 + env.level * 1.25), wind = env.weather.wind + (env.storm ? 0.5 : 0);
-        for (const R of this.order) { const wl = L.waterAt(R); if (wl < R.base) drawReflection(ctx, R, this.sprites[R.i], wl, t, wind, this.scale, body); }
+        if (Q.fx) for (const R of this.order) { const wl = L.waterAt(R); if (wl < R.base) drawReflection(ctx, R, this.sprites[R.i], wl, t, wind, this.scale, body); }
         for (const R of this.order) {                                   // what stands out of the water
             const wl = L.waterAt(R);
             if (wl < R.top - R.unit * 1.2) continue;
@@ -206,7 +211,7 @@ export class Scene {
             drawWet(ctx, R, wl, env, t, col);
             ctx.restore();
             drawRing(ctx, R, wl, t, col);
-            drawSpray(ctx, R, wl, env, t, col);
+            if (Q.fx) drawSpray(ctx, R, wl, env, t, col);
         }
         drawCrab(ctx, L, env, t, col);
         drawOver(ctx, L, env, t, col, ui.about, hits);
@@ -269,7 +274,5 @@ export class Scene {
         if (col.warm > 0.02) { ctx.fillStyle = `rgba(255,150,90,${col.warm * 0.09})`; ctx.fillRect(0, 0, L.W, L.H); }
         drawWeather(ctx, L, env, t, col);
         drawOverhang(ctx, L, env, t, col);
-        ctx.fillStyle = this.grain;
-        ctx.fillRect(0, 0, L.W, L.H);
     }
 }

@@ -32,7 +32,7 @@ export function newPool(seed, M, settings) {
         stones: START_STONES, lastStorm: -1, ledge: false,
         rocks: Array.from({ length: ROCKS }, (_, i) => ({ sp: 0, g: 0, calm: 0, cairn: false, name: '', on: ORDER.indexOf(i) >= 0 && ORDER.indexOf(i) < START_ROCKS })),
         journal: [], jseq: 0, album: {}, beach: null, bottles: 0, bottleDay: -1,
-        settings: Object.assign({ lang: '', sound: true, bell: true, alert: false }, settings)
+        settings: Object.assign({ lang: '', sound: true, bell: true, alert: false, quality: 'auto' }, settings)
     };
     christen(st);
     for (let n = st.last + 1; n <= tideOf(M); n++) { simTide(st, n); if (n % 2 === 0) snapshot(st, n); }
@@ -56,7 +56,7 @@ export function migrate(st) {
     st.v = VERSION;
     st.journal = st.journal || [];
     st.album = st.album || {};
-    st.settings = Object.assign({ lang: '', sound: true, bell: true, alert: false }, st.settings);
+    st.settings = Object.assign({ lang: '', sound: true, bell: true, alert: false, quality: 'auto' }, st.settings);
     return st;
 }
 

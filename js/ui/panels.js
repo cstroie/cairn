@@ -116,8 +116,10 @@ export function tides(env) {
 export function settings(st, hooks) {
     const sw = (id, on) => `<button class="switch" id="${id}" role="switch" aria-checked="${on}"></button>`;
     const langs = Object.entries(LANGS).map(([k, v]) => `<option value="${k}"${k === lang() ? ' selected' : ''}>${esc(v.name)}</option>`).join('');
+    const quals = ['auto', 'high', 'medium', 'low'].map(k => `<option value="${k}"${k === (st.settings.quality || 'auto') ? ' selected' : ''}>${esc(t('q' + k[0].toUpperCase() + k.slice(1)))}</option>`).join('');
     const s = open(t('settings'), `
         <div class="row"><div>${esc(t('language'))}</div><select id="s-lang" aria-label="${esc(t('language'))}">${langs}</select></div>
+        <div class="row"><div>${esc(t('quality'))}<small>${esc(t('qualitySub'))}</small></div><select id="s-quality" aria-label="${esc(t('quality'))}">${quals}</select></div>
         <div class="row"><div>${esc(t('sound'))}</div>${sw('s-sound', st.settings.sound)}</div>
         <div class="row"><div>${esc(t('bell'))}<small>${esc(t('bellSub'))}</small></div>${sw('s-bell', st.settings.bell)}</div>
         ${'Notification' in window ? `<div class="row"><div>${esc(t('alert'))}<small>${esc(t('alertSub'))}</small></div>${sw('s-alert', st.settings.alert)}</div>` : ''}
@@ -128,6 +130,7 @@ export function settings(st, hooks) {
         <div class="row"><div>${esc(t('newPool'))}</div><button id="s-new">${esc(cap(t('newPool')))}</button></div>
         <p class="about">${esc(t('about'))}</p>`);
     s.querySelector('#s-lang').onchange = e => hooks.set('lang', e.target.value);
+    s.querySelector('#s-quality').onchange = e => hooks.set('quality', e.target.value);
     for (const k of ['sound', 'bell', 'alert']) {
         const b = s.querySelector(`#s-${k}`);
         if (!b) continue;

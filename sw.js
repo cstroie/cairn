@@ -34,6 +34,7 @@ const SHELL = [
     'js/render/creatures.js',
     'js/render/ambient.js',
     'js/render/scene.js',
+    'js/render/quality.js',
     'js/audio/engine.js',
     'js/ui/icons.js',
     'js/ui/hud.js',
